@@ -2,12 +2,8 @@ use std::io;
 use std::io::Write;
 use std::io::BufWriter;
 use std::{thread, time};
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
 
 use crossterm as ct;
-
-use ctrlc;
 
 // ================================================================================
 // KEYEVENT
@@ -382,21 +378,15 @@ impl Window {
 // ================================================================================
 pub struct Config {
     pub fps: u32,
-    pub ctrl_c: bool,
 }
 
 impl Config {
     pub fn new() -> Config {
-        Config {fps: 60, ctrl_c: true}
+        Config {fps: 60}
     }
 
     pub fn fps(mut self, fps: u32) -> Config {
         self.fps = fps;
-        self
-    }
-
-    pub fn ctrl_c(mut self, value: bool) -> Config {
-        self.ctrl_c = value;
         self
     }
 }
@@ -422,12 +412,6 @@ pub fn size() -> (u16, u16) {
 pub fn run<F>(config: Config, mut frame_action: F)
 where F: FnMut(&mut State, &mut Window) {
     let expected_duration = time::Duration::from_nanos(1_000_000_000 / config.fps as u64);
-    let ctrlc_event = Arc::new(AtomicBool::new(false));
-    let ctrlc_event_write = ctrlc_event.clone();
-    ctrlc::set_handler(move || {
-        ctrlc_event_write.store(true, Ordering::SeqCst);
-    }).unwrap();
-
     let mut window = Window::new();
     let mut state = State::new();
     window.open();
@@ -435,7 +419,6 @@ where F: FnMut(&mut State, &mut Window) {
         let now = time::Instant::now();
         window.clear();
 
-        state.abort = config.ctrl_c && ctrlc_event.load(Ordering::SeqCst);
         frame_action(&mut state, &mut window);
         if state.abort {
             break;
