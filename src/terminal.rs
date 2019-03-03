@@ -190,33 +190,33 @@ impl<'a> Pencil<'a> {
         &self.style
     }
 
-    pub fn set_origin(mut self, pos: (u16, u16)) -> Pencil<'a> {
+    pub fn set_origin(&mut self, pos: (u16, u16)) -> &mut Pencil<'a> {
         self.origin = pos;
         self
     }
 
-    pub fn set_foreground(mut self, color: Color) -> Pencil<'a> {
+    pub fn set_foreground(&mut self, color: Color) -> &mut Pencil<'a> {
         self.foreground = color;
         self
     }
 
-    pub fn set_background(mut self, color: Color) -> Pencil<'a> {
+    pub fn set_background(&mut self, color: Color) -> &mut Pencil<'a> {
         self.background = color;
         self
     }
 
-    pub fn set_style(mut self, style: Style) -> Pencil<'a> {
+    pub fn set_style(&mut self, style: Style) -> &mut Pencil<'a> {
         self.style = style;
         self
     }
 
-    pub fn draw_char(mut self, pos:(u16, u16), value: char) -> Pencil<'a> {
+    pub fn draw_char(&mut self, value: char, pos:(u16, u16)) -> &mut Pencil<'a> {
         let absolute = (self.origin.0 + pos.0, self.origin.1 + pos.1);
         self.draw_element(absolute, value);
         self
     }
 
-    pub fn draw_text(mut self, pos:(u16, u16), text: &str) -> Pencil<'a> {
+    pub fn draw_text(&mut self, text: &str, pos:(u16, u16)) -> &mut Pencil<'a> {
         for (i, value) in text.chars().enumerate() {
             let absolute = (self.origin.0 + i as u16 + pos.0, self.origin.1 + pos.1);
             self.draw_element(absolute, value);
@@ -224,7 +224,7 @@ impl<'a> Pencil<'a> {
         self
     }
 
-    pub fn draw_vline(mut self, from:(u16, u16), size: u16, value: char) -> Pencil<'a> {
+    pub fn draw_vline(&mut self, value: char, from:(u16, u16), size: u16) -> &mut Pencil<'a> {
         let absolute = (self.origin.0 + from.0, self.origin.1 + from.1);
         for i in 0..size {
             let position = (absolute.0, absolute.1 + i);
@@ -233,7 +233,7 @@ impl<'a> Pencil<'a> {
         self
     }
 
-    pub fn draw_hline(mut self, from:(u16, u16), size: u16, value: char) -> Pencil<'a> {
+    pub fn draw_hline(&mut self, value: char, from:(u16, u16), size: u16) -> &mut Pencil<'a> {
         let absolute = (self.origin.0 + from.0, self.origin.1 + from.1);
         for i in 0..size {
             let position = (absolute.0 + i, absolute.1);
@@ -403,11 +403,12 @@ impl Config {
 
 pub struct State {
     pub abort: bool,
+    pub dt: time::Duration,
 }
 
 impl State {
     pub fn new() -> State {
-        State {abort: false}
+        State {abort: false, dt: time::Duration::new(0, 0) }
     }
 }
 
@@ -442,7 +443,8 @@ where F: FnMut(&mut State, &mut Window) {
 
         window.update();
 
-        if let Some(time) = expected_duration.checked_sub(now.elapsed()) {
+        state.dt = now.elapsed();
+        if let Some(time) = expected_duration.checked_sub(state.dt) {
             thread::sleep(time);
         }
     }
