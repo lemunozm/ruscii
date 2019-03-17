@@ -5,8 +5,6 @@ use std::{thread, time};
 
 use crossterm as ct;
 
-use super::input;
-
 // ================================================================================
 // VISUAL ELEMENT
 // ================================================================================
@@ -256,7 +254,6 @@ impl<'a> Pencil<'a> {
 pub struct Window {
     canvas: Canvas,
     target: BufWriter<io::Stdout>,
-    reader: input::KeyReader,
 }
 
 impl Window {
@@ -264,7 +261,6 @@ impl Window {
         Window {
             canvas: Canvas::new(size(), &VisualElement::new()),
             target: BufWriter::with_capacity(size().0 as usize * size().1 as usize * 50, io::stdout()),
-            reader: input::KeyReader::new(),
         }
     }
 
@@ -277,32 +273,29 @@ impl Window {
     }
 
     pub fn open(&mut self) {
-        ct::queue!(self.target, ct::screen::EnterAlternateScreen).unwrap();
+        ct::queue!(self.target, ct::terminal::EnterAlternateScreen).unwrap();
         ct::queue!(self.target, ct::style::ResetColor).unwrap();
         ct::queue!(self.target, ct::style::SetAttribute(ct::style::Attribute::Reset)).unwrap();
         ct::queue!(self.target, ct::cursor::Hide).unwrap();
 
-        let mut raw = ct::screen::RawScreen::into_raw_mode().unwrap();
-        raw.keep_raw_mode_on_drop();
+        ct::terminal::enable_raw_mode().unwrap();
 
-        self.reader.start();
         self.target.flush().unwrap();
     }
 
     pub fn close(&mut self) {
-        ct::screen::RawScreen::disable_raw_mode().unwrap();
+        ct::terminal::disable_raw_mode().unwrap();
 
         ct::queue!(self.target, ct::cursor::Show).unwrap();
         ct::queue!(self.target, ct::style::SetAttribute(ct::style::Attribute::Reset)).unwrap();
         ct::queue!(self.target, ct::style::ResetColor).unwrap();
-        ct::queue!(self.target, ct::screen::LeaveAlternateScreen).unwrap();
+        ct::queue!(self.target, ct::terminal::LeaveAlternateScreen).unwrap();
 
-        self.reader.stop();
         self.target.flush().unwrap();
     }
 
     pub fn input_events() {
-
+        //TODO
     }
 
     pub fn clear(&mut self) {
@@ -336,7 +329,7 @@ impl Window {
                 ct::queue!(self.target, ct::style::SetBackgroundColor(term_color)).unwrap();
                 last_background = element.background
             }
-            ct::queue!(self.target, ct::Output(element.value)).unwrap();
+            ct::queue!(self.target, ct::style::Print(element.value)).unwrap();
         }
         self.clean_state();
         self.target.flush().unwrap();
