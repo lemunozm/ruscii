@@ -1,0 +1,21 @@
+extern crate ruscii;
+
+use ruscii::terminal::{Window, Pencil};
+use std::{thread, time};
+
+fn main() {
+    let mut window = Window::open();
+
+    for _ in 0..3 {
+        window.clear();
+
+        let mut pencil = Pencil::new(window.surface_mut());
+        pencil.draw('A');
+
+        thread::sleep(time::Duration::from_secs(1));
+
+        window.update();
+    }
+
+    window.close();
+}
