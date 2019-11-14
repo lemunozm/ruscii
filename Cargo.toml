@@ -5,3 +5,4 @@ authors = ["Luis Enrique Muñoz Martín <lemunozm@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+crossterm = "0.13"

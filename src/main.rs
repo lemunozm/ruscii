@@ -6,15 +6,17 @@ use std::{thread, time};
 fn main() {
     let mut window = Window::open();
 
-    for _ in 0..3 {
+    for i in 0..3 {
         window.clear();
 
         let mut pencil = Pencil::new(window.surface_mut());
+        pencil.move_to((5, 5));
         pencil.draw('A');
 
-        thread::sleep(time::Duration::from_secs(1));
-
         window.update();
+
+        println!("Update window {}", i + 1);
+        thread::sleep(time::Duration::from_secs(1));
     }
 
     window.close();

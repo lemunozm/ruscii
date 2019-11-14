@@ -1,5 +1,12 @@
 use std::io;
+use std::io::Write;
 use std::collections::hash_set::HashSet;
+
+use crossterm::{
+    queue,
+    screen,
+    terminal::{Clear, ClearType},
+};
 
 #[derive(Clone, Eq, PartialEq, Hash)]
 enum Style {
@@ -52,8 +59,16 @@ impl Surface {
         }
     }
 
+    pub fn elem(&self, pos: (u32, u32)) -> &VisualElement {
+        &self.data[(pos.0 * self.dimension.0 + pos.1) as usize]
+    }
+
     pub fn elem_mut(&mut self, pos: (u32, u32)) -> &mut VisualElement {
         &mut self.data[(pos.0 * self.dimension.0 + pos.1) as usize]
+    }
+
+    pub fn fill(&mut self, value: &VisualElement) {
+        self.data.iter_mut().map(|_| value).count();
     }
 }
 
@@ -65,6 +80,10 @@ impl<'a> Pencil<'a> {
         }
     }
 
+    pub fn move_to(&mut self, pos: (u32, u32)) {
+        self.position = pos;
+    }
+
     pub fn draw(&mut self, value: char) {
         self.surface.elem_mut(self.position).value = value
     }
@@ -73,8 +92,8 @@ impl<'a> Pencil<'a> {
 
 impl Window {
     pub fn open() -> Window {
-        //TODO
-        println!("Open window...");
+        let mut target = io::stdout();
+        queue!(target, screen::EnterAlternateScreen).unwrap();
         Window {
             surface: Surface::new(10, 10),
             target: io::stdout(),
@@ -82,18 +101,16 @@ impl Window {
     }
 
     pub fn close(&mut self) {
-        //TODO
-        println!("Close window...");
+        queue!(self.target, screen::LeaveAlternateScreen).unwrap();
     }
 
     pub fn clear(&mut self) {
-        //TODO
-        println!("Clear window");
+        self.surface.fill(&VisualElement::new());
+        queue!(self.target, Clear(ClearType::All)).unwrap();
     }
 
     pub fn update(&mut self) {
         //TODO
-        println!("Update window");
     }
 
     pub fn surface(&self) -> &Surface { &self.surface }
