@@ -1,12 +1,21 @@
 use std::io;
+use std::panic;
+use std::panic::RefUnwindSafe;
 use std::io::Write;
 use std::collections::hash_set::HashSet;
+use std::{thread, time};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 
 use crossterm::{
     queue,
     screen,
-    terminal::{Clear, ClearType},
+    terminal,
+    cursor,
+    Output,
 };
+
+use ctrlc;
 
 #[derive(Clone, Eq, PartialEq, Hash)]
 enum Style {
@@ -25,17 +34,19 @@ pub struct VisualElement {
 
 pub struct Surface {
     data: Vec<VisualElement>,
-    dimension: (u32, u32)
+    dimension: (u16, u16)
 }
 
 pub struct Pencil<'a> {
     surface: &'a mut Surface,
-    position: (u32, u32),
+    origin: (u16, u16),
+    dimension: (u16, u16),
 }
 
 pub struct Window {
     surface: Surface,
     target: io::Stdout,
+    ctrlc_event: Arc<AtomicBool>,
 }
 
 impl VisualElement {
@@ -47,24 +58,46 @@ impl VisualElement {
             value: ' ',
         }
     }
+
+    pub fn value(&self) -> char {
+        self.value
+    }
 }
 
 impl Surface {
-    pub fn new(width: u32, height: u32) -> Surface {
+    pub fn new(dimension: (u16, u16)) -> Surface {
         let mut data = Vec::new();
-        data.resize((width * height) as usize, VisualElement::new());
+        data.resize((dimension.0 * dimension.1) as usize, VisualElement::new());
         Surface {
             data,
-            dimension: (width, height),
+            dimension,
         }
     }
 
-    pub fn elem(&self, pos: (u32, u32)) -> &VisualElement {
-        &self.data[(pos.0 * self.dimension.0 + pos.1) as usize]
+    pub fn dimension(&self) -> (u16, u16) {
+        self.dimension
     }
 
-    pub fn elem_mut(&mut self, pos: (u32, u32)) -> &mut VisualElement {
-        &mut self.data[(pos.0 * self.dimension.0 + pos.1) as usize]
+    pub fn contains(&self, pos: (u16, u16)) -> bool {
+        pos.0 < self.dimension.0 && pos.1 < self.dimension.1
+    }
+
+    pub fn elem(&self, pos: (u16, u16)) -> Option<&VisualElement> {
+        if self.contains(pos) {
+            Some(&self.data[(pos.1 * self.dimension.0 + pos.0) as usize])
+        }
+        else {
+            None
+        }
+    }
+
+    pub fn elem_mut(&mut self, pos: (u16, u16)) -> Option<&mut VisualElement> {
+        if self.contains(pos) {
+            Some(&mut self.data[(pos.1 * self.dimension.0 + pos.0) as usize])
+        }
+        else {
+            None
+        }
     }
 
     pub fn fill(&mut self, value: &VisualElement) {
@@ -74,46 +107,117 @@ impl Surface {
 
 impl<'a> Pencil<'a> {
     pub fn new(surface: &'a mut Surface) -> Pencil {
+        let dimension = surface.dimension();
         Pencil {
             surface,
-            position: (0, 0)
+            origin: (0, 0),
+            dimension,
         }
     }
 
-    pub fn move_to(&mut self, pos: (u32, u32)) {
-        self.position = pos;
+    pub fn origin(&self) -> (u16, u16) {
+        self.origin
     }
 
-    pub fn draw(&mut self, value: char) {
-        self.surface.elem_mut(self.position).value = value
+    pub fn dimension(&self) -> (u16, u16) {
+        self.dimension
+    }
+
+    pub fn set_origin(&mut self, pos: (u16, u16)) {
+        self.origin = pos;
+    }
+
+    pub fn draw_char(&mut self, pos:(u16, u16), value: char) {
+        let position = (self.origin.0 + pos.0, self.origin.1 + pos.1);
+        match self.surface.elem_mut(position) {
+            Some(element) => element.value = value,
+            None => panic!("Out of surface"),
+        }
+    }
+
+    pub fn draw_text(&mut self, pos:(u16, u16), text: &str) {
+        for (i, c) in text.chars().enumerate() {
+            let position = (self.origin.0 + i as u16 + pos.0, self.origin.1 + pos.1);
+            match self.surface.elem_mut(position) {
+                Some(element) => element.value = c,
+                None => panic!("Out of surface"),
+            }
+        }
     }
 }
 
-
 impl Window {
-    pub fn open() -> Window {
-        let mut target = io::stdout();
-        queue!(target, screen::EnterAlternateScreen).unwrap();
+    pub fn new() -> Window {
+        let ctrlc_event = Arc::new(AtomicBool::new(false));
+        let ctrlc_event_write = ctrlc_event.clone();
+        ctrlc::set_handler(move || {
+            ctrlc_event_write.store(true, Ordering::SeqCst);
+        }).unwrap();
+
+        let dimension = terminal::size().unwrap();
         Window {
-            surface: Surface::new(10, 10),
+            surface: Surface::new(dimension),
             target: io::stdout(),
+            ctrlc_event,
         }
     }
 
+    pub fn open(&mut self) {
+        queue!(self.target, screen::EnterAlternateScreen).unwrap();
+        queue!(self.target, cursor::Hide).unwrap();
+    }
+
     pub fn close(&mut self) {
+        queue!(self.target, cursor::Show).unwrap();
         queue!(self.target, screen::LeaveAlternateScreen).unwrap();
     }
 
     pub fn clear(&mut self) {
         self.surface.fill(&VisualElement::new());
-        queue!(self.target, Clear(ClearType::All)).unwrap();
+        queue!(self.target, terminal::Clear(terminal::ClearType::All)).unwrap();
+        queue!(self.target, cursor::MoveTo(0, 0)).unwrap();
     }
 
     pub fn update(&mut self) {
-        //TODO
+        let (width, height) = self.surface.dimension();
+        for y in 1..height {
+            for x in 1..width {
+                queue!(self.target, cursor::MoveTo(x, y)).unwrap();
+                queue!(self.target, Output(self.surface.elem((x, y)).unwrap().value())).unwrap();
+            }
+        }
+        self.target.flush().unwrap();
     }
 
-    pub fn surface(&self) -> &Surface { &self.surface }
-    pub fn surface_mut(&mut self) -> &mut Surface { &mut self.surface }
+    pub fn surface(&self) -> &Surface {
+        &self.surface
+    }
+
+    pub fn surface_mut(&mut self) -> &mut Surface {
+        &mut self.surface
+    }
+
+    pub fn was_aborted(&self) -> bool {
+        self.ctrlc_event.load(Ordering::SeqCst)
+    }
+}
+
+pub fn run<F>(fps: u32, mut frame_action: F)
+where F: FnMut(&mut Window) -> bool + RefUnwindSafe {
+    let mut window = Window::new();
+    window.open();
+    loop {
+        window.clear();
+        if window.was_aborted() {
+            break;
+        }
+        if !frame_action(&mut window) {
+            break;
+        }
+        window.update();
+
+        thread::sleep(time::Duration::from_micros((1.0 / fps as f32) as u64));
+    }
+    window.close();
 }
 

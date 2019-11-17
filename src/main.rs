@@ -1,23 +1,17 @@
-extern crate ruscii;
-
+use ruscii::terminal;
 use ruscii::terminal::{Window, Pencil};
-use std::{thread, time};
+use ruscii::gui::FPSCounter;
 
 fn main() {
-    let mut window = Window::open();
+    let mut fps_counter = FPSCounter::new();
+    terminal::run(60, &mut |window: &mut Window| {
+        fps_counter.update();
 
-    for i in 0..3 {
-        window.clear();
+        let (width, height) = window.surface().dimension();
 
         let mut pencil = Pencil::new(window.surface_mut());
-        pencil.move_to((5, 5));
-        pencil.draw('A');
+        pencil.draw_text((width / 2 , height / 2), &format!("{}", fps_counter));
 
-        window.update();
-
-        println!("Update window {}", i + 1);
-        thread::sleep(time::Duration::from_secs(1));
-    }
-
-    window.close();
+        true
+    });
 }

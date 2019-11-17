@@ -6,3 +6,4 @@ edition = "2018"
 
 [dependencies]
 crossterm = "0.13"
+ctrlc = "3.1.3"
