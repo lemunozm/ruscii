@@ -18,18 +18,18 @@ use crossterm::{
 use ctrlc;
 
 #[derive(Clone, Eq, PartialEq, Hash)]
-enum Style {
+pub enum Style {
     Plain,
     Bold,
     Italic,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct VisualElement {
-    styles: HashSet<Style>,
-    background: u8,
-    foreground: u8,
-    value: char,
+    //pub styles: HashSet<Style>,
+    pub background: u8,
+    pub foreground: u8,
+    pub value: char,
 }
 
 pub struct Surface {
@@ -52,7 +52,7 @@ pub struct Window {
 impl VisualElement {
     pub fn new() -> VisualElement {
         VisualElement {
-            styles: HashSet::new(),
+            //styles: HashSet::new(),
             background: 0,
             foreground: 0,
             value: ' ',
@@ -100,8 +100,8 @@ impl Surface {
         }
     }
 
-    pub fn fill(&mut self, value: &VisualElement) {
-        self.data.iter_mut().map(|_| value).count();
+    pub fn fill(&mut self, elem: &VisualElement) {
+        self.data.iter_mut().map(|x| *x = *elem).count();
     }
 }
 
@@ -165,6 +165,7 @@ impl Window {
     pub fn open(&mut self) {
         queue!(self.target, screen::EnterAlternateScreen).unwrap();
         queue!(self.target, cursor::Hide).unwrap();
+        queue!(self.target, cursor::MoveTo(0, 0)).unwrap();
     }
 
     pub fn close(&mut self) {
@@ -173,9 +174,8 @@ impl Window {
     }
 
     pub fn clear(&mut self) {
-        self.surface.fill(&VisualElement::new());
-        queue!(self.target, terminal::Clear(terminal::ClearType::All)).unwrap();
         queue!(self.target, cursor::MoveTo(0, 0)).unwrap();
+        self.surface.fill(&VisualElement::new());
     }
 
     pub fn update(&mut self) {
