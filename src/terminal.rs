@@ -2,7 +2,6 @@ use std::io;
 use std::panic;
 use std::panic::RefUnwindSafe;
 use std::io::Write;
-use std::collections::hash_set::HashSet;
 use std::{thread, time};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -17,8 +16,9 @@ use crossterm::{
 
 use ctrlc;
 
-#[derive(Clone, Eq, PartialEq, Hash)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash)]
 pub enum Style {
+    None,
     Plain,
     Bold,
     Italic,
@@ -26,7 +26,7 @@ pub enum Style {
 
 #[derive(Clone, Copy)]
 pub struct VisualElement {
-    //pub styles: HashSet<Style>,
+    pub style: Style,
     pub background: u8,
     pub foreground: u8,
     pub value: char,
@@ -52,7 +52,7 @@ pub struct Window {
 impl VisualElement {
     pub fn new() -> VisualElement {
         VisualElement {
-            //styles: HashSet::new(),
+            style: Style::None,
             background: 0,
             foreground: 0,
             value: ' ',
