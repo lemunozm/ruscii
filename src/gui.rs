@@ -1,5 +1,4 @@
 use std::time::SystemTime;
-use std::fmt;
 
 pub struct FPSCounter {
     fps: u32,
@@ -26,13 +25,7 @@ impl FPSCounter {
         }
     }
 
-    pub fn fps(&self) -> u32 {
+    pub fn count(&self) -> u32 {
         self.fps
-    }
-}
-
-impl fmt::Display for FPSCounter {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "FPS: {}", self.fps)
     }
 }
