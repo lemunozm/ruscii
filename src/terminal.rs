@@ -16,6 +16,9 @@ use crossterm::{
 
 use ctrlc;
 
+// ================================================================================
+// VISUAL ELEMENT
+// ================================================================================
 #[derive(Clone, Copy, Eq, PartialEq, Hash)]
 pub enum Style {
     None,
@@ -30,23 +33,6 @@ pub struct VisualElement {
     pub background: u8,
     pub foreground: u8,
     pub value: char,
-}
-
-pub struct Surface {
-    data: Vec<VisualElement>,
-    dimension: (u16, u16)
-}
-
-pub struct Pencil<'a> {
-    surface: &'a mut Surface,
-    origin: (u16, u16),
-    dimension: (u16, u16),
-}
-
-pub struct Window {
-    surface: Surface,
-    target: BufWriter<io::Stdout>,
-    ctrlc_event: Arc<AtomicBool>,
 }
 
 impl VisualElement {
@@ -64,10 +50,17 @@ impl VisualElement {
     }
 }
 
+// ================================================================================
+// SURFACE
+// ================================================================================
+pub struct Surface {
+    data: Vec<VisualElement>,
+    dimension: (u16, u16)
+}
+
 impl Surface {
     pub fn new(dimension: (u16, u16)) -> Surface {
         let mut data = Vec::new();
-        //let mut index = 0;
         data.resize((dimension.0 * dimension.1) as usize, VisualElement::new());
         Surface {
             data,
@@ -104,6 +97,19 @@ impl Surface {
     pub fn fill(&mut self, elem: &VisualElement) {
         self.data.iter_mut().map(|x| *x = *elem).count();
     }
+
+    pub fn data(&self) -> &Vec<VisualElement> {
+        &self.data
+    }
+}
+
+// ================================================================================
+// PENCIL
+// ================================================================================
+pub struct Pencil<'a> {
+    surface: &'a mut Surface,
+    origin: (u16, u16),
+    dimension: (u16, u16),
 }
 
 impl<'a> Pencil<'a> {
@@ -147,6 +153,15 @@ impl<'a> Pencil<'a> {
     }
 }
 
+// ================================================================================
+// WINDOW
+// ================================================================================
+pub struct Window {
+    surface: Surface,
+    target: BufWriter<io::Stdout>,
+    ctrlc_event: Arc<AtomicBool>,
+}
+
 impl Window {
     pub fn new() -> Window {
         let ctrlc_event = Arc::new(AtomicBool::new(false));
@@ -182,12 +197,8 @@ impl Window {
     }
 
     pub fn update(&mut self) {
-        let (width, height) = self.surface.dimension();
-        for y in 0..height {
-            for x in 0..width {
-                queue!(self.target, cursor::MoveTo(x, y)).unwrap();
-                queue!(self.target, Output(self.surface.elem((x, y)).unwrap().value())).unwrap();
-            }
+        for element in self.surface.data().iter() {
+            queue!(self.target, Output(element.value())).unwrap();
         }
         self.target.flush().unwrap();
     }
@@ -205,6 +216,9 @@ impl Window {
     }
 }
 
+// ================================================================================
+// MODULE
+// ================================================================================
 pub fn run<F>(fps: u32, mut frame_action: F)
 where F: FnMut(&mut Window) -> bool {
     let expected_duration = time::Duration::from_nanos(1_000_000_000 / fps as u64);
