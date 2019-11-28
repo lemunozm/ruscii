@@ -235,13 +235,9 @@ where F: FnMut(&mut Window) -> bool {
         }
         window.update();
 
-        /*
         if let Some(time) = expected_duration.checked_sub(now.elapsed()) {
             thread::sleep(time);
-            //println!("{} ", time.as_micros());
         }
-        */
-        //thread::sleep(expected_duration);
     }
     window.close();
 }

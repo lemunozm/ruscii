@@ -7,11 +7,10 @@ fn main() {
     terminal::run(60, &mut |window: &mut Window| {
         fps_counter.update();
 
-        //let (width, height) = window.surface().dimension();
+        let (width, height) = window.surface().dimension();
 
         let mut pencil = Pencil::new(window.surface_mut());
-        pencil.draw_text((2, 1), &format!("FPS: {}", fps_counter.count()));
-        //pencil.draw_text((width / 2 , height / 2), &format!("FPS: {}", fps_counter.count()));
+        pencil.draw_text((width / 2 , height / 2), &format!("FPS: {}", fps_counter.count()));
 
         true
     });
