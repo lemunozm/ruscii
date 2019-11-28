@@ -1,7 +1,7 @@
 use std::io;
-use std::panic;
-use std::panic::RefUnwindSafe;
 use std::io::Write;
+use std::io::BufWriter;
+use std::panic;
 use std::{thread, time};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -45,7 +45,7 @@ pub struct Pencil<'a> {
 
 pub struct Window {
     surface: Surface,
-    target: io::Stdout,
+    target: BufWriter<io::Stdout>,
     ctrlc_event: Arc<AtomicBool>,
 }
 
@@ -67,6 +67,7 @@ impl VisualElement {
 impl Surface {
     pub fn new(dimension: (u16, u16)) -> Surface {
         let mut data = Vec::new();
+        //let mut index = 0;
         data.resize((dimension.0 * dimension.1) as usize, VisualElement::new());
         Surface {
             data,
@@ -157,7 +158,7 @@ impl Window {
         let dimension = terminal::size().unwrap();
         Window {
             surface: Surface::new(dimension),
-            target: io::stdout(),
+            target: BufWriter::with_capacity(dimension.0 as usize * dimension.1 as usize * 50, io::stdout()),
             ctrlc_event,
         }
     }
@@ -166,11 +167,13 @@ impl Window {
         queue!(self.target, screen::EnterAlternateScreen).unwrap();
         queue!(self.target, cursor::Hide).unwrap();
         queue!(self.target, cursor::MoveTo(0, 0)).unwrap();
+        self.target.flush().unwrap();
     }
 
     pub fn close(&mut self) {
         queue!(self.target, cursor::Show).unwrap();
         queue!(self.target, screen::LeaveAlternateScreen).unwrap();
+        self.target.flush().unwrap();
     }
 
     pub fn clear(&mut self) {
@@ -180,8 +183,8 @@ impl Window {
 
     pub fn update(&mut self) {
         let (width, height) = self.surface.dimension();
-        for y in 1..height {
-            for x in 1..width {
+        for y in 0..height {
+            for x in 0..width {
                 queue!(self.target, cursor::MoveTo(x, y)).unwrap();
                 queue!(self.target, Output(self.surface.elem((x, y)).unwrap().value())).unwrap();
             }
@@ -203,10 +206,12 @@ impl Window {
 }
 
 pub fn run<F>(fps: u32, mut frame_action: F)
-where F: FnMut(&mut Window) -> bool + RefUnwindSafe {
+where F: FnMut(&mut Window) -> bool {
+    let expected_duration = time::Duration::from_nanos(1_000_000_000 / fps as u64);
     let mut window = Window::new();
     window.open();
     loop {
+        let now = time::Instant::now();
         window.clear();
         if window.was_aborted() {
             break;
@@ -216,7 +221,13 @@ where F: FnMut(&mut Window) -> bool + RefUnwindSafe {
         }
         window.update();
 
-        thread::sleep(time::Duration::from_micros((1.0 / fps as f32) as u64));
+        /*
+        if let Some(time) = expected_duration.checked_sub(now.elapsed()) {
+            thread::sleep(time);
+            //println!("{} ", time.as_micros());
+        }
+        */
+        //thread::sleep(expected_duration);
     }
     window.close();
 }
