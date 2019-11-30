@@ -6,7 +6,7 @@ use std::{thread, time};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
-use crossterm::{queue, screen, terminal, cursor, style, Output};
+use crossterm as ct;
 
 use ctrlc;
 
@@ -233,7 +233,7 @@ impl Window {
             ctrlc_event_write.store(true, Ordering::SeqCst);
         }).unwrap();
 
-        let dimension = terminal::size().unwrap();
+        let dimension = ct::terminal::size().unwrap();
         Window {
             surface: Surface::new(dimension),
             target: BufWriter::with_capacity(dimension.0 as usize * dimension.1 as usize * 50, io::stdout()),
@@ -246,16 +246,16 @@ impl Window {
     }
 
     pub fn open(&mut self) {
-        queue!(self.target, screen::EnterAlternateScreen).unwrap();
-        queue!(self.target, style::ResetColor).unwrap();
-        queue!(self.target, cursor::Hide).unwrap();
+        ct::queue!(self.target, ct::screen::EnterAlternateScreen).unwrap();
+        ct::queue!(self.target, ct::style::ResetColor).unwrap();
+        ct::queue!(self.target, ct::cursor::Hide).unwrap();
         self.target.flush().unwrap();
     }
 
     pub fn close(&mut self) {
-        queue!(self.target, cursor::Show).unwrap();
-        queue!(self.target, style::ResetColor).unwrap();
-        queue!(self.target, screen::LeaveAlternateScreen).unwrap();
+        ct::queue!(self.target, ct::cursor::Show).unwrap();
+        ct::queue!(self.target, ct::style::ResetColor).unwrap();
+        ct::queue!(self.target, ct::screen::LeaveAlternateScreen).unwrap();
         self.target.flush().unwrap();
     }
 
@@ -273,16 +273,16 @@ impl Window {
         let mut last_background = VisualElement::new().background;
         for element in self.surface.data().iter() {
             if last_foreground != element.foreground {
-                let termcolor = style::Color::AnsiValue(element.foreground.code());
-                queue!(self.target, style::SetForegroundColor(termcolor)).unwrap();
+                let termcolor = ct::style::Color::AnsiValue(element.foreground.code());
+                ct::queue!(self.target, ct::style::SetForegroundColor(termcolor)).unwrap();
                 last_foreground = element.foreground
             }
             if last_background != element.background {
-                let termcolor = style::Color::AnsiValue(element.background.code());
-                queue!(self.target, style::SetBackgroundColor(termcolor)).unwrap();
+                let termcolor = ct::style::Color::AnsiValue(element.background.code());
+                ct::queue!(self.target, ct::style::SetBackgroundColor(termcolor)).unwrap();
                 last_background = element.background
             }
-            queue!(self.target, Output(element.value)).unwrap();
+            ct::queue!(self.target, ct::Output(element.value)).unwrap();
         }
         self.clean_state();
         self.target.flush().unwrap();
@@ -301,13 +301,13 @@ impl Window {
     }
 
     fn clean_state(&mut self) {
-        let term_foreground = style::Color::AnsiValue(VisualElement::new().foreground.code());
-        queue!(self.target, style::SetForegroundColor(term_foreground)).unwrap();
+        let term_foreground = ct::style::Color::AnsiValue(VisualElement::new().foreground.code());
+        ct::queue!(self.target, ct::style::SetForegroundColor(term_foreground)).unwrap();
 
-        let term_background = style::Color::AnsiValue(VisualElement::new().background.code());
-        queue!(self.target, style::SetBackgroundColor(term_background)).unwrap();
+        let term_background = ct::style::Color::AnsiValue(VisualElement::new().background.code());
+        ct::queue!(self.target, ct::style::SetBackgroundColor(term_background)).unwrap();
 
-        queue!(self.target, cursor::MoveTo(0, 0)).unwrap();
+        ct::queue!(self.target, ct::cursor::MoveTo(0, 0)).unwrap();
     }
 }
 
