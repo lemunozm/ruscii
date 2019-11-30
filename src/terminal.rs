@@ -6,20 +6,49 @@ use std::{thread, time};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
-use crossterm::{
-    queue,
-    screen,
-    terminal,
-    cursor,
-    Output,
-};
+use crossterm::{queue, screen, terminal, cursor, style, Output};
 
 use ctrlc;
 
 // ================================================================================
 // VISUAL ELEMENT
 // ================================================================================
-#[derive(Clone, Copy, Eq, PartialEq, Hash)]
+#[derive(Clone, Copy, Eq, PartialEq)]
+pub enum Color {
+    Black,
+    White,
+    Grey,
+    DarkGrey,
+    LightGrey,
+    Red,
+    Green,
+    Blue,
+    Cyan,
+    Yellow,
+    Magenta,
+    Xterm(u8),
+}
+
+impl Color {
+    pub fn code(&self) -> u8 {
+        match *self {
+            Color::Black => 16,
+            Color::White => 231,
+            Color::Grey => 244,
+            Color::DarkGrey => 238,
+            Color::LightGrey => 250,
+            Color::Red => 195,
+            Color::Green => 46,
+            Color::Blue => 21,
+            Color::Cyan => 51,
+            Color::Yellow => 226,
+            Color::Magenta => 201,
+            Color::Xterm(code) => code,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Eq, PartialEq)]
 pub enum Style {
     None,
     Plain,
@@ -30,8 +59,8 @@ pub enum Style {
 #[derive(Clone, Copy)]
 pub struct VisualElement {
     pub style: Style,
-    pub background: u8,
-    pub foreground: u8,
+    pub background: Color,
+    pub foreground: Color,
     pub value: char,
 }
 
@@ -39,14 +68,10 @@ impl VisualElement {
     pub fn new() -> VisualElement {
         VisualElement {
             style: Style::None,
-            background: 0,
-            foreground: 0,
+            background: Color::Black,
+            foreground: Color::White,
             value: ' ',
         }
-    }
-
-    pub fn value(&self) -> char {
-        self.value
     }
 }
 
@@ -55,7 +80,7 @@ impl VisualElement {
 // ================================================================================
 pub struct Surface {
     data: Vec<VisualElement>,
-    dimension: (u16, u16)
+    dimension: (u16, u16),
 }
 
 impl Surface {
@@ -80,18 +105,14 @@ impl Surface {
         if self.contains(pos) {
             Some(&self.data[(pos.1 * self.dimension.0 + pos.0) as usize])
         }
-        else {
-            None
-        }
+        else { None }
     }
 
     pub fn elem_mut(&mut self, pos: (u16, u16)) -> Option<&mut VisualElement> {
         if self.contains(pos) {
             Some(&mut self.data[(pos.1 * self.dimension.0 + pos.0) as usize])
         }
-        else {
-            None
-        }
+        else { None }
     }
 
     pub fn fill(&mut self, elem: &VisualElement) {
@@ -110,6 +131,9 @@ pub struct Pencil<'a> {
     surface: &'a mut Surface,
     origin: (u16, u16),
     dimension: (u16, u16),
+    foreground: Color,
+    background: Color,
+    style: Style,
 }
 
 impl<'a> Pencil<'a> {
@@ -119,6 +143,9 @@ impl<'a> Pencil<'a> {
             surface,
             origin: (0, 0),
             dimension,
+            foreground: VisualElement::new().foreground,
+            background: VisualElement::new().background,
+            style: VisualElement::new().style,
         }
     }
 
@@ -130,26 +157,62 @@ impl<'a> Pencil<'a> {
         self.dimension
     }
 
-    pub fn set_origin(&mut self, pos: (u16, u16)) {
+    pub fn foreground(&self) -> &Color {
+        &self.foreground
+    }
+
+    pub fn background(&self) -> &Color {
+        &self.background
+    }
+
+    pub fn style(&self) -> &Style {
+        &self.style
+    }
+
+    pub fn set_origin(&mut self, pos: (u16, u16)) -> &mut Pencil<'a> {
         self.origin = pos;
+        self
     }
 
-    pub fn draw_char(&mut self, pos:(u16, u16), value: char) {
-        let position = (self.origin.0 + pos.0, self.origin.1 + pos.1);
-        match self.surface.elem_mut(position) {
-            Some(element) => element.value = value,
+    pub fn set_foreground(&mut self, color: Color) -> &mut Pencil<'a> {
+        self.foreground = color;
+        self
+    }
+
+    pub fn set_background(&mut self, color: Color) -> &mut Pencil<'a> {
+        self.background = color;
+        self
+    }
+
+    pub fn set_style(&mut self, style: Style) -> &mut Pencil<'a> {
+        self.style = style;
+        self
+    }
+
+    pub fn draw_char(&mut self, pos:(u16, u16), value: char) -> &mut Pencil<'a> {
+        let absolute = (self.origin.0 + pos.0, self.origin.1 + pos.1);
+        self.draw_element(absolute, value);
+        self
+    }
+
+    pub fn draw_text(&mut self, pos:(u16, u16), text: &str) -> &mut Pencil<'a> {
+        for (i, value) in text.chars().enumerate() {
+            let absolute = (self.origin.0 + i as u16 + pos.0, self.origin.1 + pos.1);
+            self.draw_element(absolute, value);
+        }
+        self
+    }
+
+    fn draw_element(&mut self, pos: (u16, u16), value: char) {
+        match self.surface.elem_mut(pos) {
+            Some(element) => {
+                element.value = value;
+                element.foreground = self.foreground;
+                element.background = self.background;
+                element.style = self.style;
+            },
             None => panic!("Out of surface"),
-        }
-    }
-
-    pub fn draw_text(&mut self, pos:(u16, u16), text: &str) {
-        for (i, c) in text.chars().enumerate() {
-            let position = (self.origin.0 + i as u16 + pos.0, self.origin.1 + pos.1);
-            match self.surface.elem_mut(position) {
-                Some(element) => element.value = c,
-                None => panic!("Out of surface"),
-            }
-        }
+        };
     }
 }
 
@@ -178,28 +241,50 @@ impl Window {
         }
     }
 
+    pub fn size(&self) -> (u16, u16) {
+        self.surface.dimension()
+    }
+
     pub fn open(&mut self) {
         queue!(self.target, screen::EnterAlternateScreen).unwrap();
+        queue!(self.target, style::ResetColor).unwrap();
         queue!(self.target, cursor::Hide).unwrap();
-        queue!(self.target, cursor::MoveTo(0, 0)).unwrap();
         self.target.flush().unwrap();
     }
 
     pub fn close(&mut self) {
         queue!(self.target, cursor::Show).unwrap();
+        queue!(self.target, style::ResetColor).unwrap();
         queue!(self.target, screen::LeaveAlternateScreen).unwrap();
         self.target.flush().unwrap();
     }
 
     pub fn clear(&mut self) {
-        queue!(self.target, cursor::MoveTo(0, 0)).unwrap();
         self.surface.fill(&VisualElement::new());
     }
 
+    pub fn clear_with(&mut self, element: &VisualElement) {
+        self.surface.fill(element);
+    }
+
     pub fn update(&mut self) {
+        self.clean_state();
+        let mut last_foreground = VisualElement::new().foreground;
+        let mut last_background = VisualElement::new().background;
         for element in self.surface.data().iter() {
-            queue!(self.target, Output(element.value())).unwrap();
+            if last_foreground != element.foreground {
+                let termcolor = style::Color::AnsiValue(element.foreground.code());
+                queue!(self.target, style::SetForegroundColor(termcolor)).unwrap();
+                last_foreground = element.foreground
+            }
+            if last_background != element.background {
+                let termcolor = style::Color::AnsiValue(element.background.code());
+                queue!(self.target, style::SetBackgroundColor(termcolor)).unwrap();
+                last_background = element.background
+            }
+            queue!(self.target, Output(element.value)).unwrap();
         }
+        self.clean_state();
         self.target.flush().unwrap();
     }
 
@@ -213,6 +298,16 @@ impl Window {
 
     pub fn was_aborted(&self) -> bool {
         self.ctrlc_event.load(Ordering::SeqCst)
+    }
+
+    fn clean_state(&mut self) {
+        let term_foreground = style::Color::AnsiValue(VisualElement::new().foreground.code());
+        queue!(self.target, style::SetForegroundColor(term_foreground)).unwrap();
+
+        let term_background = style::Color::AnsiValue(VisualElement::new().background.code());
+        queue!(self.target, style::SetBackgroundColor(term_background)).unwrap();
+
+        queue!(self.target, cursor::MoveTo(0, 0)).unwrap();
     }
 }
 
