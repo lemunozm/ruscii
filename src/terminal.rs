@@ -37,7 +37,7 @@ impl Color {
             Color::Grey => 244,
             Color::DarkGrey => 238,
             Color::LightGrey => 250,
-            Color::Red => 195,
+            Color::Red => 196,
             Color::Green => 46,
             Color::Blue => 21,
             Color::Cyan => 51,
@@ -50,10 +50,8 @@ impl Color {
 
 #[derive(Clone, Copy, Eq, PartialEq)]
 pub enum Style {
-    None,
     Plain,
     Bold,
-    Italic,
 }
 
 #[derive(Clone, Copy)]
@@ -67,7 +65,7 @@ pub struct VisualElement {
 impl VisualElement {
     pub fn new() -> VisualElement {
         VisualElement {
-            style: Style::None,
+            style: Style::Plain,
             background: Color::Black,
             foreground: Color::White,
             value: ' ',
@@ -248,12 +246,14 @@ impl Window {
     pub fn open(&mut self) {
         ct::queue!(self.target, ct::screen::EnterAlternateScreen).unwrap();
         ct::queue!(self.target, ct::style::ResetColor).unwrap();
+        ct::queue!(self.target, ct::style::SetAttribute(ct::style::Attribute::Reset)).unwrap();
         ct::queue!(self.target, ct::cursor::Hide).unwrap();
         self.target.flush().unwrap();
     }
 
     pub fn close(&mut self) {
         ct::queue!(self.target, ct::cursor::Show).unwrap();
+        ct::queue!(self.target, ct::style::SetAttribute(ct::style::Attribute::Reset)).unwrap();
         ct::queue!(self.target, ct::style::ResetColor).unwrap();
         ct::queue!(self.target, ct::screen::LeaveAlternateScreen).unwrap();
         self.target.flush().unwrap();
@@ -271,15 +271,22 @@ impl Window {
         self.clean_state();
         let mut last_foreground = VisualElement::new().foreground;
         let mut last_background = VisualElement::new().background;
+        let mut last_style = VisualElement::new().style;
+
         for element in self.surface.data().iter() {
+            if last_style != element.style {
+                let term_attribute = self.to_attribute(element.style);
+                ct::queue!(self.target, ct::style::SetAttribute(term_attribute)).unwrap();
+                last_style = element.style
+            }
             if last_foreground != element.foreground {
-                let termcolor = ct::style::Color::AnsiValue(element.foreground.code());
-                ct::queue!(self.target, ct::style::SetForegroundColor(termcolor)).unwrap();
+                let term_color = ct::style::Color::AnsiValue(element.foreground.code());
+                ct::queue!(self.target, ct::style::SetForegroundColor(term_color)).unwrap();
                 last_foreground = element.foreground
             }
             if last_background != element.background {
-                let termcolor = ct::style::Color::AnsiValue(element.background.code());
-                ct::queue!(self.target, ct::style::SetBackgroundColor(termcolor)).unwrap();
+                let term_color = ct::style::Color::AnsiValue(element.background.code());
+                ct::queue!(self.target, ct::style::SetBackgroundColor(term_color)).unwrap();
                 last_background = element.background
             }
             ct::queue!(self.target, ct::Output(element.value)).unwrap();
@@ -301,6 +308,8 @@ impl Window {
     }
 
     fn clean_state(&mut self) {
+        ct::queue!(self.target, ct::style::SetAttribute(ct::style::Attribute::NoBold)).unwrap();
+
         let term_foreground = ct::style::Color::AnsiValue(VisualElement::new().foreground.code());
         ct::queue!(self.target, ct::style::SetForegroundColor(term_foreground)).unwrap();
 
@@ -308,6 +317,13 @@ impl Window {
         ct::queue!(self.target, ct::style::SetBackgroundColor(term_background)).unwrap();
 
         ct::queue!(self.target, ct::cursor::MoveTo(0, 0)).unwrap();
+    }
+
+    fn to_attribute(&self, style: Style) -> ct::style::Attribute {
+        match style {
+            Style::Plain => ct::style::Attribute::NoBold,
+            Style::Bold => ct::style::Attribute::Bold,
+        }
     }
 }
 
