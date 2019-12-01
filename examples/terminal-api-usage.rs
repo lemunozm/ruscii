@@ -1,13 +1,13 @@
-use ruscii::terminal;
-use ruscii::terminal::{Window, Pencil, Color, Style};
+use ruscii::terminal::{self, Config, State, Window, Pencil, Color, Style};
 use ruscii::gui::FPSCounter;
 
-use std::u32;
+const FRAMES_TO_EXIT: u32 = 500;
 
 fn main() {
     let mut fps_counter = FPSCounter::new();
+    let mut frames = 0;
 
-    terminal::run(u32::MAX, &mut |window: &mut Window| {
+    terminal::run(Config::new(), &mut |state: &mut State, window: &mut Window| {
         fps_counter.update();
 
         Pencil::new(window.surface_mut())
@@ -25,14 +25,19 @@ fn main() {
             .set_style(Style::Bold)
             .draw_text((0, 7), "This is a 'bold' string")
             .set_style(Style::Plain)
-            .draw_text((0, 8), "This is a 'plain' string again");
+            .draw_text((0, 8), "This is a 'plain' string again")
+            .draw_text((0, 15), "ctrl-c to exit");
 
         let (width, height) = window.size();
 
         Pencil::new(window.surface_mut())
             .set_origin((width / 2, height / 2))
-            .draw_text((0, 0), "Centered text");
+            .draw_text((0, 0), "This starts from the center")
+            .draw_text((0, 3), &format!("Remaining frames to exit: {}", FRAMES_TO_EXIT - frames));
 
-        true
+        frames += 1;
+        if frames > FRAMES_TO_EXIT {
+            state.abort = true;
+        }
     });
 }

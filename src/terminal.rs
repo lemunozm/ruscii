@@ -220,22 +220,15 @@ impl<'a> Pencil<'a> {
 pub struct Window {
     surface: Surface,
     target: BufWriter<io::Stdout>,
-    ctrlc_event: Arc<AtomicBool>,
 }
 
 impl Window {
     pub fn new() -> Window {
-        let ctrlc_event = Arc::new(AtomicBool::new(false));
-        let ctrlc_event_write = ctrlc_event.clone();
-        ctrlc::set_handler(move || {
-            ctrlc_event_write.store(true, Ordering::SeqCst);
-        }).unwrap();
 
         let dimension = ct::terminal::size().unwrap();
         Window {
             surface: Surface::new(dimension),
             target: BufWriter::with_capacity(dimension.0 as usize * dimension.1 as usize * 50, io::stdout()),
-            ctrlc_event,
         }
     }
 
@@ -303,10 +296,6 @@ impl Window {
         &mut self.surface
     }
 
-    pub fn was_aborted(&self) -> bool {
-        self.ctrlc_event.load(Ordering::SeqCst)
-    }
-
     fn clean_state(&mut self) {
         ct::queue!(self.target, ct::style::SetAttribute(ct::style::Attribute::NoBold)).unwrap();
 
@@ -328,22 +317,64 @@ impl Window {
 }
 
 // ================================================================================
+// CONFIG
+// ================================================================================
+pub struct Config {
+    pub fps: u32,
+    pub ctrl_c: bool,
+}
+
+impl Config {
+    pub fn new() -> Config {
+        Config {fps: 60, ctrl_c: true}
+    }
+
+    pub fn fps(mut self, fps: u32) -> Config {
+        self.fps = fps;
+        self
+    }
+
+    pub fn ctrl_c(mut self, value: bool) -> Config {
+        self.ctrl_c = value;
+        self
+    }
+}
+
+pub struct State {
+    pub abort: bool,
+}
+
+impl State {
+    pub fn new() -> State {
+        State {abort: false}
+    }
+}
+
+// ================================================================================
 // MODULE
 // ================================================================================
-pub fn run<F>(fps: u32, mut frame_action: F)
-where F: FnMut(&mut Window) -> bool {
-    let expected_duration = time::Duration::from_nanos(1_000_000_000 / fps as u64);
+pub fn run<F>(config: Config, mut frame_action: F)
+where F: FnMut(&mut State, &mut Window) {
+    let expected_duration = time::Duration::from_nanos(1_000_000_000 / config.fps as u64);
+    let ctrlc_event = Arc::new(AtomicBool::new(false));
+    let ctrlc_event_write = ctrlc_event.clone();
+    ctrlc::set_handler(move || {
+        ctrlc_event_write.store(true, Ordering::SeqCst);
+    }).unwrap();
+
     let mut window = Window::new();
+    let mut state = State::new();
     window.open();
     loop {
         let now = time::Instant::now();
         window.clear();
-        if window.was_aborted() {
+
+        state.abort = config.ctrl_c && ctrlc_event.load(Ordering::SeqCst);
+        frame_action(&mut state, &mut window);
+        if state.abort {
             break;
         }
-        if !frame_action(&mut window) {
-            break;
-        }
+
         window.update();
 
         if let Some(time) = expected_duration.checked_sub(now.elapsed()) {
