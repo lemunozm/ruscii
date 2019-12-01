@@ -167,33 +167,33 @@ impl<'a> Pencil<'a> {
         &self.style
     }
 
-    pub fn set_origin(&mut self, pos: (u16, u16)) -> &mut Pencil<'a> {
+    pub fn set_origin(mut self, pos: (u16, u16)) -> Pencil<'a> {
         self.origin = pos;
         self
     }
 
-    pub fn set_foreground(&mut self, color: Color) -> &mut Pencil<'a> {
+    pub fn set_foreground(mut self, color: Color) -> Pencil<'a> {
         self.foreground = color;
         self
     }
 
-    pub fn set_background(&mut self, color: Color) -> &mut Pencil<'a> {
+    pub fn set_background(mut self, color: Color) -> Pencil<'a> {
         self.background = color;
         self
     }
 
-    pub fn set_style(&mut self, style: Style) -> &mut Pencil<'a> {
+    pub fn set_style(mut self, style: Style) -> Pencil<'a> {
         self.style = style;
         self
     }
 
-    pub fn draw_char(&mut self, pos:(u16, u16), value: char) -> &mut Pencil<'a> {
+    pub fn draw_char(mut self, pos:(u16, u16), value: char) -> Pencil<'a> {
         let absolute = (self.origin.0 + pos.0, self.origin.1 + pos.1);
         self.draw_element(absolute, value);
         self
     }
 
-    pub fn draw_text(&mut self, pos:(u16, u16), text: &str) -> &mut Pencil<'a> {
+    pub fn draw_text(mut self, pos:(u16, u16), text: &str) -> Pencil<'a> {
         for (i, value) in text.chars().enumerate() {
             let absolute = (self.origin.0 + i as u16 + pos.0, self.origin.1 + pos.1);
             self.draw_element(absolute, value);
