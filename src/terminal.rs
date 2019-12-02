@@ -79,16 +79,26 @@ impl VisualElement {
 pub struct Surface {
     data: Vec<VisualElement>,
     dimension: (u16, u16),
+    default_element: VisualElement,
 }
 
 impl Surface {
-    pub fn new(dimension: (u16, u16)) -> Surface {
+    pub fn new(dimension: (u16, u16), default_element: &VisualElement) -> Surface {
         let mut data = Vec::new();
-        data.resize((dimension.0 * dimension.1) as usize, VisualElement::new());
+        data.resize((dimension.0 * dimension.1) as usize, *default_element);
         Surface {
             data,
             dimension,
+            default_element: *default_element,
         }
+    }
+
+    pub fn default_element(&self) -> &VisualElement {
+        &self.default_element
+    }
+
+    pub fn set_default_element(&mut self, element: &VisualElement) {
+        self.default_element = *element;
     }
 
     pub fn dimension(&self) -> (u16, u16) {
@@ -113,6 +123,10 @@ impl Surface {
         else { None }
     }
 
+    pub fn clear(&mut self) {
+        self.fill(&self.default_element().clone());
+    }
+
     pub fn fill(&mut self, elem: &VisualElement) {
         self.data.iter_mut().map(|x| *x = *elem).count();
     }
@@ -126,24 +140,21 @@ impl Surface {
 // PENCIL
 // ================================================================================
 pub struct Pencil<'a> {
-    surface: &'a mut Surface,
     origin: (u16, u16),
-    dimension: (u16, u16),
     foreground: Color,
     background: Color,
     style: Style,
+    surface: &'a mut Surface,
 }
 
 impl<'a> Pencil<'a> {
     pub fn new(surface: &'a mut Surface) -> Pencil {
-        let dimension = surface.dimension();
         Pencil {
-            surface,
             origin: (0, 0),
-            dimension,
-            foreground: VisualElement::new().foreground,
-            background: VisualElement::new().background,
-            style: VisualElement::new().style,
+            foreground: surface.default_element().foreground,
+            background: surface.default_element().background,
+            style: surface.default_element().style,
+            surface,
         }
     }
 
@@ -152,7 +163,8 @@ impl<'a> Pencil<'a> {
     }
 
     pub fn dimension(&self) -> (u16, u16) {
-        self.dimension
+        (self.surface.dimension().0 - self.origin.0,
+        self.surface.dimension().1 - self.origin.1)
     }
 
     pub fn foreground(&self) -> &Color {
@@ -224,10 +236,9 @@ pub struct Window {
 
 impl Window {
     pub fn new() -> Window {
-
         let dimension = ct::terminal::size().unwrap();
         Window {
-            surface: Surface::new(dimension),
+            surface: Surface::new(dimension, &VisualElement::new()),
             target: BufWriter::with_capacity(dimension.0 as usize * dimension.1 as usize * 50, io::stdout()),
         }
     }
@@ -253,18 +264,20 @@ impl Window {
     }
 
     pub fn clear(&mut self) {
-        self.surface.fill(&VisualElement::new());
-    }
-
-    pub fn clear_with(&mut self, element: &VisualElement) {
-        self.surface.fill(element);
+        let current_size = ct::terminal::size().unwrap();
+        if current_size.0 != self.size().0 || current_size.1 != self.size().1 {
+            //self.surface = Surface::new(current_size, self.surface.default_element());
+        }
+        else {
+            self.surface.fill(&self.surface.default_element().clone());
+        }
     }
 
     pub fn update(&mut self) {
         self.clean_state();
-        let mut last_foreground = VisualElement::new().foreground;
-        let mut last_background = VisualElement::new().background;
-        let mut last_style = VisualElement::new().style;
+        let mut last_foreground = self.surface.default_element().foreground;
+        let mut last_background = self.surface.default_element().background;
+        let mut last_style = self.surface.default_element().style;
 
         for element in self.surface.data().iter() {
             if last_style != element.style {
@@ -299,10 +312,10 @@ impl Window {
     fn clean_state(&mut self) {
         ct::queue!(self.target, ct::style::SetAttribute(ct::style::Attribute::NoBold)).unwrap();
 
-        let term_foreground = ct::style::Color::AnsiValue(VisualElement::new().foreground.code());
+        let term_foreground = ct::style::Color::AnsiValue(self.surface.default_element().foreground.code());
         ct::queue!(self.target, ct::style::SetForegroundColor(term_foreground)).unwrap();
 
-        let term_background = ct::style::Color::AnsiValue(VisualElement::new().background.code());
+        let term_background = ct::style::Color::AnsiValue(self.surface.default_element().background.code());
         ct::queue!(self.target, ct::style::SetBackgroundColor(term_background)).unwrap();
 
         ct::queue!(self.target, ct::cursor::MoveTo(0, 0)).unwrap();
