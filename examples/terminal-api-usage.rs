@@ -1,4 +1,4 @@
-use ruscii::terminal::{self, Config, State, Window, Pencil, Color, Style};
+use ruscii::terminal::{self, Config, State, Window, Pencil, Color, Style, KeyEvent};
 use ruscii::gui::FPSCounter;
 
 const FRAMES_TO_EXIT: u32 = 500;
@@ -26,7 +26,8 @@ fn main() {
             .draw_text((0, 7), "This is a 'bold' string")
             .set_style(Style::Plain)
             .draw_text((0, 8), "This is a 'plain' string again")
-            .draw_text((0, 15), "ctrl-c to exit");
+            .draw_text((0, 15), "Press ctrl-c to exit")
+            .draw_text((0, 16), "Also you can press 'q', 'ESC'");
 
         let (width, height) = window.size();
 
@@ -39,5 +40,15 @@ fn main() {
         if frames > FRAMES_TO_EXIT {
             state.abort = true;
         }
+
+        for key_event in window.key_events() {
+            match key_event {
+                KeyEvent::Esc => state.abort = true,
+                KeyEvent::Char('q') => state.abort = true,
+                KeyEvent::Ctrl('c') => state.abort = true,
+                _ => (),
+            }
+        }
     });
 }
+
