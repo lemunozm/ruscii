@@ -1,7 +1,6 @@
 use std::io;
 use std::io::Write;
 use std::io::BufWriter;
-use std::panic;
 use std::{thread, time};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -221,7 +220,7 @@ impl<'a> Pencil<'a> {
                 element.background = self.background;
                 element.style = self.style;
             },
-            None => panic!("Out of surface"),
+            None => (),
         };
     }
 }
@@ -266,7 +265,7 @@ impl Window {
     pub fn clear(&mut self) {
         let current_size = ct::terminal::size().unwrap();
         if current_size.0 != self.size().0 || current_size.1 != self.size().1 {
-            //self.surface = Surface::new(current_size, self.surface.default_element());
+            self.surface = Surface::new(current_size, self.surface.default_element());
         }
         else {
             self.surface.fill(&self.surface.default_element().clone());
@@ -330,7 +329,7 @@ impl Window {
 }
 
 // ================================================================================
-// CONFIG
+// CONFIG and STATE
 // ================================================================================
 pub struct Config {
     pub fps: u32,
