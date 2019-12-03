@@ -224,6 +224,24 @@ impl<'a> Pencil<'a> {
         self
     }
 
+    pub fn draw_vline(mut self, from:(u16, u16), size: u16, value: char) -> Pencil<'a> {
+        let absolute = (self.origin.0 + from.0, self.origin.1 + from.1);
+        for i in 0..size {
+            let position = (absolute.0, absolute.1 + i);
+            self.draw_element(position, value);
+        }
+        self
+    }
+
+    pub fn draw_hline(mut self, from:(u16, u16), size: u16, value: char) -> Pencil<'a> {
+        let absolute = (self.origin.0 + from.0, self.origin.1 + from.1);
+        for i in 0..size {
+            let position = (absolute.0 + i, absolute.1);
+            self.draw_element(position, value);
+        }
+        self
+    }
+
     fn draw_element(&mut self, pos: (u16, u16), value: char) {
         match self.surface.elem_mut(pos) {
             Some(element) => {
@@ -248,16 +266,11 @@ pub struct Window {
 
 impl Window {
     pub fn new() -> Window {
-        let dimension = ct::terminal::size().unwrap();
         Window {
-            surface: Surface::new(dimension, &VisualElement::new()),
-            target: BufWriter::with_capacity(dimension.0 as usize * dimension.1 as usize * 50, io::stdout()),
+            surface: Surface::new(size(), &VisualElement::new()),
+            target: BufWriter::with_capacity(size().0 as usize * size().1 as usize * 50, io::stdout()),
             reader: None,
         }
-    }
-
-    pub fn size(&self) -> (u16, u16) {
-        self.surface.dimension()
     }
 
     pub fn open(&mut self) {
@@ -291,9 +304,8 @@ impl Window {
     }
 
     pub fn clear(&mut self) {
-        let current_size = ct::terminal::size().unwrap();
-        if current_size.0 != self.size().0 || current_size.1 != self.size().1 {
-            self.surface = Surface::new(current_size, self.surface.default_element());
+        if size().0 != self.surface.dimension().0 || size().1 != self.surface.dimension().1 {
+            self.surface = Surface::new(size(), self.surface.default_element());
         }
         else {
             self.surface.fill(&self.surface.default_element().clone());
@@ -402,6 +414,10 @@ impl State {
 // ================================================================================
 // MODULE
 // ================================================================================
+pub fn size() -> (u16, u16) {
+    ct::terminal::size().unwrap()
+}
+
 pub fn run<F>(config: Config, mut frame_action: F)
 where F: FnMut(&mut State, &mut Window) {
     let expected_duration = time::Duration::from_nanos(1_000_000_000 / config.fps as u64);
