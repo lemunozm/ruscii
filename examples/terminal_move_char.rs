@@ -54,10 +54,10 @@ fn main() {
 
         game_state.update();
 
-        Pencil::new(window.surface_mut())
+        Pencil::new(window.canvas_mut())
             .draw_text(&format!("FPS: {}", fps_counter.count()), (0, 0));
 
-        Pencil::new(window.surface_mut())
+        Pencil::new(window.canvas_mut())
             .set_origin((width / 4, height / 4))
             .set_foreground(Color::Grey)
             .draw_char('╔', (0, 0))
@@ -69,7 +69,7 @@ fn main() {
             .draw_vline('║', (0, 1), game_state.map_dim.1 - 2)
             .draw_vline('║', (width / 2 - 1, 1), game_state.map_dim.1 - 2);
 
-        Pencil::new(window.surface_mut())
+        Pencil::new(window.canvas_mut())
             .set_origin((width / 4, height / 4))
             .set_foreground(Color::Yellow)
             .draw_char('A', game_state.player_pos);

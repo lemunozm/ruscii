@@ -83,17 +83,17 @@ impl VisualElement {
 // ================================================================================
 // SURFACE
 // ================================================================================
-pub struct Surface {
+pub struct Canvas {
     data: Vec<VisualElement>,
     dimension: (u16, u16),
     default_element: VisualElement,
 }
 
-impl Surface {
-    pub fn new(dimension: (u16, u16), default_element: &VisualElement) -> Surface {
+impl Canvas {
+    pub fn new(dimension: (u16, u16), default_element: &VisualElement) -> Canvas {
         let mut data = Vec::new();
         data.resize((dimension.0 * dimension.1) as usize, *default_element);
-        Surface {
+        Canvas {
             data,
             dimension,
             default_element: *default_element,
@@ -151,17 +151,17 @@ pub struct Pencil<'a> {
     foreground: Color,
     background: Color,
     style: Style,
-    surface: &'a mut Surface,
+    canvas: &'a mut Canvas,
 }
 
 impl<'a> Pencil<'a> {
-    pub fn new(surface: &'a mut Surface) -> Pencil {
+    pub fn new(canvas: &'a mut Canvas) -> Pencil {
         Pencil {
             origin: (0, 0),
-            foreground: surface.default_element().foreground,
-            background: surface.default_element().background,
-            style: surface.default_element().style,
-            surface,
+            foreground: canvas.default_element().foreground,
+            background: canvas.default_element().background,
+            style: canvas.default_element().style,
+            canvas,
         }
     }
 
@@ -170,8 +170,8 @@ impl<'a> Pencil<'a> {
     }
 
     pub fn dimension(&self) -> (u16, u16) {
-        (self.surface.dimension().0 - self.origin.0,
-        self.surface.dimension().1 - self.origin.1)
+        (self.canvas.dimension().0 - self.origin.0,
+        self.canvas.dimension().1 - self.origin.1)
     }
 
     pub fn foreground(&self) -> &Color {
@@ -239,7 +239,7 @@ impl<'a> Pencil<'a> {
     }
 
     fn draw_element(&mut self, pos: (u16, u16), value: char) {
-        match self.surface.elem_mut(pos) {
+        match self.canvas.elem_mut(pos) {
             Some(element) => {
                 element.value = value;
                 element.foreground = self.foreground;
@@ -255,14 +255,14 @@ impl<'a> Pencil<'a> {
 // WINDOW
 // ================================================================================
 pub struct Window {
-    surface: Surface,
+    canvas: Canvas,
     target: BufWriter<io::Stdout>,
 }
 
 impl Window {
     pub fn new() -> Window {
         Window {
-            surface: Surface::new(size(), &VisualElement::new()),
+            canvas: Canvas::new(size(), &VisualElement::new()),
             target: BufWriter::with_capacity(size().0 as usize * size().1 as usize * 50, io::stdout()),
         }
     }
@@ -291,21 +291,21 @@ impl Window {
     }
 
     pub fn clear(&mut self) {
-        if size().0 != self.surface.dimension().0 || size().1 != self.surface.dimension().1 {
-            self.surface = Surface::new(size(), self.surface.default_element());
+        if size().0 != self.canvas.dimension().0 || size().1 != self.canvas.dimension().1 {
+            self.canvas = Canvas::new(size(), self.canvas.default_element());
         }
         else {
-            self.surface.fill(&self.surface.default_element().clone());
+            self.canvas.fill(&self.canvas.default_element().clone());
         }
     }
 
     pub fn update(&mut self) {
         self.clean_state();
-        let mut last_foreground = self.surface.default_element().foreground;
-        let mut last_background = self.surface.default_element().background;
-        let mut last_style = self.surface.default_element().style;
+        let mut last_foreground = self.canvas.default_element().foreground;
+        let mut last_background = self.canvas.default_element().background;
+        let mut last_style = self.canvas.default_element().style;
 
-        for element in self.surface.data().iter() {
+        for element in self.canvas.data().iter() {
             if last_style != element.style {
                 let term_attribute = style_impl(element.style);
                 ct::queue!(self.target, ct::style::SetAttribute(term_attribute)).unwrap();
@@ -327,21 +327,21 @@ impl Window {
         self.target.flush().unwrap();
     }
 
-    pub fn surface(&self) -> &Surface {
-        &self.surface
+    pub fn canvas(&self) -> &Canvas {
+        &self.canvas
     }
 
-    pub fn surface_mut(&mut self) -> &mut Surface {
-        &mut self.surface
+    pub fn canvas_mut(&mut self) -> &mut Canvas {
+        &mut self.canvas
     }
 
     fn clean_state(&mut self) {
         ct::queue!(self.target, ct::style::SetAttribute(ct::style::Attribute::NoBold)).unwrap();
 
-        let term_foreground = ct::style::Color::AnsiValue(self.surface.default_element().foreground.code());
+        let term_foreground = ct::style::Color::AnsiValue(self.canvas.default_element().foreground.code());
         ct::queue!(self.target, ct::style::SetForegroundColor(term_foreground)).unwrap();
 
-        let term_background = ct::style::Color::AnsiValue(self.surface.default_element().background.code());
+        let term_background = ct::style::Color::AnsiValue(self.canvas.default_element().background.code());
         ct::queue!(self.target, ct::style::SetBackgroundColor(term_background)).unwrap();
 
         ct::queue!(self.target, ct::cursor::MoveTo(0, 0)).unwrap();

@@ -10,7 +10,7 @@ fn main() {
     terminal::run(Config::new().fps(u32::MAX), &mut |state: &mut State, window: &mut Window| {
         fps_counter.update();
 
-        Pencil::new(window.surface_mut())
+        Pencil::new(window.canvas_mut())
             .draw_text(&format!("FPS: {}", fps_counter.count()), (1, 1));
 
         for key_down in input::get_keys_down() {
