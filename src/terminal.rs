@@ -257,7 +257,6 @@ impl<'a> Pencil<'a> {
 pub struct Window {
     surface: Surface,
     target: BufWriter<io::Stdout>,
-    reader: Option<ct::input::AsyncReader>,
 }
 
 impl Window {
@@ -265,7 +264,6 @@ impl Window {
         Window {
             surface: Surface::new(size(), &VisualElement::new()),
             target: BufWriter::with_capacity(size().0 as usize * size().1 as usize * 50, io::stdout()),
-            reader: None,
         }
     }
 
@@ -278,24 +276,17 @@ impl Window {
         let mut raw = ct::screen::RawScreen::into_raw_mode().unwrap();
         raw.keep_raw_mode_on_drop();
 
-        self.reader = Some(ct::input::input().read_async());
         self.target.flush().unwrap();
     }
 
     pub fn close(&mut self) {
         ct::screen::RawScreen::disable_raw_mode().unwrap();
+
         ct::queue!(self.target, ct::cursor::Show).unwrap();
         ct::queue!(self.target, ct::style::SetAttribute(ct::style::Attribute::Reset)).unwrap();
         ct::queue!(self.target, ct::style::ResetColor).unwrap();
         ct::queue!(self.target, ct::screen::LeaveAlternateScreen).unwrap();
 
-        match self.reader {
-            Some(ref mut reader) => {
-                reader.stop();
-                self.reader = None;
-            }
-            None => panic!("You can not close a windows that is already closed"),
-        }
         self.target.flush().unwrap();
     }
 
@@ -334,22 +325,6 @@ impl Window {
         }
         self.clean_state();
         self.target.flush().unwrap();
-    }
-
-    pub fn key_events(&mut self) -> Vec<KeyEvent> {
-        let mut key_events = Vec::new();
-        match self.reader {
-            Some(ref mut reader) => {
-                for event in reader {
-                    match event {
-                        ct::input::InputEvent::Keyboard(key_event) => key_events.push(key_event),
-                        _ => key_events.push(KeyEvent::Esc),
-                    }
-                }
-            }
-            None => panic!("It is necessary to open the window before read events"),
-        }
-        key_events
     }
 
     pub fn surface(&self) -> &Surface {

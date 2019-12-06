@@ -1,4 +1,5 @@
-use ruscii::terminal::{self, Config, State, Window, Pencil, KeyEvent};
+use ruscii::terminal::{self, Config, State, Window, Pencil};
+use ruscii::input::{self, KeyDown, Key};
 use ruscii::gui::FPSCounter;
 
 use std::u32;
@@ -12,11 +13,11 @@ fn main() {
         Pencil::new(window.surface_mut())
             .draw_text(&format!("FPS: {}", fps_counter.count()), (1, 1));
 
-        for key_event in window.key_events() {
-            match key_event {
-                KeyEvent::Esc => state.abort = true,
-                KeyEvent::Char('q') => state.abort = true,
-                KeyEvent::Ctrl('c') => state.abort = true,
+        for key_down in input::get_keys_down() {
+            match key_down {
+                KeyDown::Key(Key::Esc) => state.abort = true,
+                KeyDown::Key(Key::Q) => state.abort = true,
+                KeyDown::Ctrl(Key::C) => state.abort = true,
                 _ => (),
             }
         }

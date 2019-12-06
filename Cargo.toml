@@ -7,3 +7,4 @@ edition = "2018"
 [dependencies]
 crossterm = "0.13"
 device_query = "0.1.3"
+lazy_static = "1.4.0"

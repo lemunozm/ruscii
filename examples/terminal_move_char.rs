@@ -1,4 +1,5 @@
-use ruscii::terminal::{self, Config, State, Window, Pencil, Color, KeyEvent};
+use ruscii::terminal::{self, Config, State, Window, Pencil, Color};
+use ruscii::input::{self, KeyDown, Key};
 use ruscii::gui::FPSCounter;
 
 
@@ -34,19 +35,19 @@ fn main() {
         map_dim: (width / 2, height / 2)
     };
 
-    terminal::run(Config::new(), &mut |term_state: &mut State, window: &mut Window| {
+    terminal::run(Config::new().fps(30), &mut |term_state: &mut State, window: &mut Window| {
         fps_counter.update();
 
-        for key_event in window.key_events() {
-            match key_event {
-                KeyEvent::Esc => term_state.abort = true,
-                KeyEvent::Char('q') => term_state.abort = true,
-                KeyEvent::Ctrl('c') => term_state.abort = true,
+        for key_down in input::get_keys_down() {
+            match key_down {
+                KeyDown::Key(Key::Esc) => term_state.abort = true,
+                KeyDown::Key(Key::Q) => term_state.abort = true,
+                KeyDown::Ctrl(Key::C) => term_state.abort = true,
 
-                KeyEvent::Char('h') => game_state.player_move = (-2, 0),
-                KeyEvent::Char('j') => game_state.player_move = (0, 1),
-                KeyEvent::Char('k') => game_state.player_move = (0, -1),
-                KeyEvent::Char('l') => game_state.player_move = (2, 0),
+                KeyDown::Key(Key::H) => game_state.player_move = (-2, 0),
+                KeyDown::Key(Key::J) => game_state.player_move = (0, 1),
+                KeyDown::Key(Key::K) => game_state.player_move = (0, -1),
+                KeyDown::Key(Key::L) => game_state.player_move = (2, 0),
                 _ => (),
             }
         }
