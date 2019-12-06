@@ -257,6 +257,7 @@ impl<'a> Pencil<'a> {
 pub struct Window {
     canvas: Canvas,
     target: BufWriter<io::Stdout>,
+    reader: Option<ct::input::AsyncReader>,
 }
 
 impl Window {
@@ -264,6 +265,7 @@ impl Window {
         Window {
             canvas: Canvas::new(size(), &VisualElement::new()),
             target: BufWriter::with_capacity(size().0 as usize * size().1 as usize * 50, io::stdout()),
+            reader: None,
         }
     }
 
@@ -276,6 +278,8 @@ impl Window {
         let mut raw = ct::screen::RawScreen::into_raw_mode().unwrap();
         raw.keep_raw_mode_on_drop();
 
+        self.reader = Some(ct::input::input().read_async());
+
         self.target.flush().unwrap();
     }
 
@@ -286,6 +290,11 @@ impl Window {
         ct::queue!(self.target, ct::style::SetAttribute(ct::style::Attribute::Reset)).unwrap();
         ct::queue!(self.target, ct::style::ResetColor).unwrap();
         ct::queue!(self.target, ct::screen::LeaveAlternateScreen).unwrap();
+
+        if let Some(ref mut reader) = self.reader {
+            reader.stop();
+            self.reader = None;
+        }
 
         self.target.flush().unwrap();
     }
