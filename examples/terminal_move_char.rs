@@ -44,10 +44,13 @@ fn main() {
                 KeyDown::Key(Key::Q) => term_state.abort = true,
                 KeyDown::Ctrl(Key::C) => term_state.abort = true,
 
-                KeyDown::Key(Key::H) | KeyDown::Key(Key::A) => game_state.player_move = (-2, 0),
-                KeyDown::Key(Key::J) | KeyDown::Key(Key::S) => game_state.player_move = (0, 1),
-                KeyDown::Key(Key::K) | KeyDown::Key(Key::W) => game_state.player_move = (0, -1),
-                KeyDown::Key(Key::L) | KeyDown::Key(Key::D) => game_state.player_move = (2, 0),
+                KeyDown::Key(key) => match key {
+                    Key::H | Key::A => game_state.player_move = (-2, 0),
+                    Key::J | Key::S => game_state.player_move = (0, 1),
+                    Key::K | Key::W => game_state.player_move = (0, -1),
+                    Key::L | Key::D => game_state.player_move = (2, 0),
+                    _ => (),
+                }
                 _ => (),
             }
         }

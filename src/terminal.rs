@@ -5,10 +5,7 @@ use std::{thread, time};
 
 use crossterm as ct;
 
-// ================================================================================
-// KEYEVENT
-// ================================================================================
-pub use ct::input::KeyEvent;
+use super::input;
 
 // ================================================================================
 // VISUAL ELEMENT
@@ -207,32 +204,34 @@ impl<'a> Pencil<'a> {
     }
 
     pub fn draw_char(&mut self, value: char, pos:(u16, u16)) -> &mut Pencil<'a> {
-        let absolute = (self.origin.0 + pos.0, self.origin.1 + pos.1);
-        self.draw_element(absolute, value);
+        let elem_pos = (self.origin.0 + pos.0, self.origin.1 + pos.1);
+        self.draw_element(elem_pos, value);
         self
     }
 
     pub fn draw_text(&mut self, text: &str, pos:(u16, u16)) -> &mut Pencil<'a> {
+        let width = self.canvas.dimension().0;
         for (i, value) in text.chars().enumerate() {
-            let absolute = (self.origin.0 + i as u16 + pos.0, self.origin.1 + pos.1);
-            self.draw_element(absolute, value);
+            let elem_pos = (self.origin.0 + i as u16 + pos.0, self.origin.1 + pos.1);
+            let elem_pos = (elem_pos.0 % width, elem_pos.1 + elem_pos.0 / width);
+            self.draw_element(elem_pos, value);
         }
         self
     }
 
     pub fn draw_vline(&mut self, value: char, from:(u16, u16), size: u16) -> &mut Pencil<'a> {
-        let absolute = (self.origin.0 + from.0, self.origin.1 + from.1);
+        let elem_pos = (self.origin.0 + from.0, self.origin.1 + from.1);
         for i in 0..size {
-            let position = (absolute.0, absolute.1 + i);
+            let position = (elem_pos.0, elem_pos.1 + i);
             self.draw_element(position, value);
         }
         self
     }
 
     pub fn draw_hline(&mut self, value: char, from:(u16, u16), size: u16) -> &mut Pencil<'a> {
-        let absolute = (self.origin.0 + from.0, self.origin.1 + from.1);
+        let elem_pos = (self.origin.0 + from.0, self.origin.1 + from.1);
         for i in 0..size {
-            let position = (absolute.0 + i, absolute.1);
+            let position = (elem_pos.0 + i, elem_pos.1);
             self.draw_element(position, value);
         }
         self
@@ -257,7 +256,7 @@ impl<'a> Pencil<'a> {
 pub struct Window {
     canvas: Canvas,
     target: BufWriter<io::Stdout>,
-    reader: Option<ct::input::AsyncReader>,
+    reader: input::KeyReader,
 }
 
 impl Window {
@@ -265,8 +264,16 @@ impl Window {
         Window {
             canvas: Canvas::new(size(), &VisualElement::new()),
             target: BufWriter::with_capacity(size().0 as usize * size().1 as usize * 50, io::stdout()),
-            reader: None,
+            reader: input::KeyReader::new(),
         }
+    }
+
+    pub fn canvas(&self) -> &Canvas {
+        &self.canvas
+    }
+
+    pub fn canvas_mut(&mut self) -> &mut Canvas {
+        &mut self.canvas
     }
 
     pub fn open(&mut self) {
@@ -278,8 +285,7 @@ impl Window {
         let mut raw = ct::screen::RawScreen::into_raw_mode().unwrap();
         raw.keep_raw_mode_on_drop();
 
-        self.reader = Some(ct::input::input().read_async());
-
+        self.reader.start();
         self.target.flush().unwrap();
     }
 
@@ -291,12 +297,12 @@ impl Window {
         ct::queue!(self.target, ct::style::ResetColor).unwrap();
         ct::queue!(self.target, ct::screen::LeaveAlternateScreen).unwrap();
 
-        if let Some(ref mut reader) = self.reader {
-            reader.stop();
-            self.reader = None;
-        }
-
+        self.reader.stop();
         self.target.flush().unwrap();
+    }
+
+    pub fn input_events() {
+
     }
 
     pub fn clear(&mut self) {
@@ -334,14 +340,6 @@ impl Window {
         }
         self.clean_state();
         self.target.flush().unwrap();
-    }
-
-    pub fn canvas(&self) -> &Canvas {
-        &self.canvas
-    }
-
-    pub fn canvas_mut(&mut self) -> &mut Canvas {
-        &mut self.canvas
     }
 
     fn clean_state(&mut self) {

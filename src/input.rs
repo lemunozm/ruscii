@@ -1,6 +1,10 @@
+use crossterm as ct;
 use device_query as dq;
 use dq::DeviceQuery;
 
+// ================================================================================
+// KEYDOWN
+// ================================================================================
 #[derive(Clone, Copy, Debug)]
 pub enum Key {
     Esc,
@@ -156,62 +160,65 @@ pub fn get_keys_down() -> Vec<KeyDown> {
         CTRL_SHIFT => key_list.iter().map(|key| KeyDown::CtrlShift(*key)).collect::<Vec<KeyDown>>(),
         ALT_SHIFT => key_list.iter().map(|key| KeyDown::AltShift(*key)).collect::<Vec<KeyDown>>(),
         CTRL_ALT_SHIFT=> key_list.iter().map(|key| KeyDown::CtrlAltShift(*key)).collect::<Vec<KeyDown>>(),
-        _ => Vec::new() //never reached
+        _ => unreachable!(),
     }
 }
 
-/*
-const NONE: usize = 0x00;
-const CTRL: usize = 0x01;
-const ALT: usize = 0x02;
-const SHIFT: usize = 0x04;
-const CTRL_ALT: usize = CTRL | ALT;
-const CTRL_SHIFT: usize = CTRL | SHIFT;
-const ALT_SHIFT: usize = ALT | SHIFT;
-const CTRL_ALT_SHIFT: usize = CTRL | ALT | SHIFT;
-
-pub fn get_keys_down() -> Vec<KeyDown> {
-    let mut modifier = NONE;
-    let mut key_list = Vec::new();
-    for key_down in (*DEVICE).device.get_keys() {
-        match key_down {
-            dq::Keycode::LControl => modifier |= CTRL,
-            dq::Keycode::RControl => modifier |= CTRL,
-            dq::Keycode::LAlt => modifier |= ALT,
-            dq::Keycode::RAlt => modifier |= ALT,
-            dq::Keycode::LShift => modifier |= SHIFT,
-            dq::Keycode::RShift => modifier |= SHIFT,
-            other => key_list.push(to_local_key(other)),
-        }
-    }
-
-    match modifier {
-        NONE => key_list.iter().map(|key| KeyDown::Key(*key)).collect::<Vec<KeyDown>>(),
-        CTRL => key_list.iter().map(|key| KeyDown::Ctrl(*key)).collect::<Vec<KeyDown>>(),
-        ALT => key_list.iter().map(|key| KeyDown::Alt(*key)).collect::<Vec<KeyDown>>(),
-        SHIFT => key_list.iter().map(|key| KeyDown::Shift(*key)).collect::<Vec<KeyDown>>(),
-        CTRL_ALT => key_list.iter().map(|key| KeyDown::CtrlAlt(*key)).collect::<Vec<KeyDown>>(),
-        CTRL_SHIFT => key_list.iter().map(|key| KeyDown::CtrlShift(*key)).collect::<Vec<KeyDown>>(),
-        ALT_SHIFT => key_list.iter().map(|key| KeyDown::AltShift(*key)).collect::<Vec<KeyDown>>(),
-        CTRL_ALT_SHIFT=> key_list.iter().map(|key| KeyDown::CtrlAltShift(*key)).collect::<Vec<KeyDown>>(),
-        _ => Vec::new() //never reached
-    }
-}
-*/
-
-struct SafetyDevice {
+struct SyncDevice {
    device: dq::DeviceState
 }
 
-impl SafetyDevice {
-    pub fn new() -> SafetyDevice {
-        SafetyDevice { device: dq::DeviceState::new() }
+impl SyncDevice {
+    pub fn new() -> SyncDevice {
+        SyncDevice { device: dq::DeviceState::new() }
     }
 }
 
-unsafe impl Sync for SafetyDevice { }
+unsafe impl Sync for SyncDevice { }
 
 lazy_static! {
-    static ref DEVICE: SafetyDevice = SafetyDevice::new();
+    static ref DEVICE: SyncDevice = SyncDevice::new();
+}
+
+// ================================================================================
+// KEYEVENT
+// ================================================================================
+pub use ct::input::KeyEvent;
+
+pub struct KeyReader {
+   input_reader: Option<ct::input::AsyncReader>,
+}
+
+impl KeyReader {
+    pub fn new() -> KeyReader {
+        KeyReader { input_reader: None }
+    }
+
+    pub fn start(&mut self) {
+        self.input_reader = Some(ct::input::input().read_async());
+    }
+
+    pub fn stop(&mut self) {
+        if let Some(ref mut reader) = self.input_reader {
+            reader.stop();
+            self.input_reader = None;
+        }
+    }
+
+    pub fn key_events(&mut self) -> Vec<KeyEvent> {
+        let mut key_events = Vec::new();
+        match self.input_reader {
+            Some(ref mut reader) => {
+                for event in reader {
+                    match event {
+                        ct::input::InputEvent::Keyboard(key_event) => key_events.push(key_event),
+                        _ => (),
+                    }
+                }
+            }
+            None => panic!("It is necessary to start the reader before read key events"),
+        }
+        key_events
+    }
 }
 
