@@ -66,7 +66,6 @@ impl Keyboard {
     }
 
     pub fn consume_key_events(&mut self) -> Vec<KeyEvent> {
-        //TODO: filter Key::Unknown
         let mut new_events = Vec::new();
         for event in self.event_receiver.try_iter() {
             match event {
@@ -92,7 +91,9 @@ impl Keyboard {
             let event = ct::event::read().unwrap();
             if let ct::event::Event::Key(key_event) = event {
                 let key = Self::transform_input_key(&key_event.code);
-                sender.send(KeyEvent::Pressed(key)).unwrap();
+                if key != Key::Unknown {
+                    sender.send(KeyEvent::Pressed(key)).unwrap();
+                }
             }
         }
     }
@@ -103,7 +104,9 @@ impl Keyboard {
         std::mem::replace(last_device_state, new_state);
         for keycode in released {
             let key = Self::transform_device_key(&keycode);
-            sender.send(KeyEvent::Released(key)).unwrap();
+            if key != Key::Unknown {
+                sender.send(KeyEvent::Released(key)).unwrap();
+            }
         }
         thread::sleep(time::Duration::from_millis(1));
     }
