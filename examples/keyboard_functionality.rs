@@ -4,16 +4,21 @@ use ruscii::keyboard::Keyboard;
 use std::time;
 
 fn main() {
-    let keyboard = Keyboard::new();
     let now = time::Instant::now();
+    let mut keyboard = Keyboard::new();
+    let mut events = Vec::new();
     terminal::run(Config::new(), &mut |state: &mut State, window: &mut Window| {
         let mut pencil = Pencil::new(window.canvas_mut());
 
-        for (i, signal) in keyboard.get_signals().iter().enumerate() {
-            pencil.draw_text(&format!("{:?}", signal), (0, i as u16 % 20));
+        for event in keyboard.consume_key_events() {
+            events.push(event);
         }
 
-        if now.elapsed().as_secs() > 2 {
+        for (i, event) in events.iter().rev().enumerate() {
+            pencil.draw_text(&format!("{:?}", event), (0, i as u16));
+        }
+
+        if now.elapsed().as_secs() > 5 {
             state.abort = true;
         }
     });
