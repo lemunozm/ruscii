@@ -10,7 +10,7 @@ use std::collections::HashSet;
 
 use std::time;
 
-#[derive(Clone, Copy, Eq, PartialEq, Hash, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum Key {
     Esc, Space, Enter,
     A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
@@ -19,16 +19,10 @@ pub enum Key {
     Unknown,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum KeyEvent {
     Pressed(Key),
     Released(Key),
-}
-
-#[derive(PartialEq, Eq, Hash)] //TODO: remove line
-struct KeySignal {
-    key: Key,
-    stamp: time::Instant,
 }
 
 pub struct Keyboard {
@@ -36,8 +30,7 @@ pub struct Keyboard {
     device_thread: Option<JoinHandle<()>>,
     event_receiver: Receiver<KeyEvent>,
     threads_running: Arc<AtomicBool>,
-    state: HashSet<KeySignal>,
-    last_stamp: usize,
+    state: HashSet<Key>,
 }
 
 impl Keyboard {
@@ -69,14 +62,29 @@ impl Keyboard {
             event_receiver: receiver,
             threads_running,
             state: HashSet::new(),
-            last_stamp: 0,
         }
     }
 
     pub fn consume_key_events(&mut self) -> Vec<KeyEvent> {
-        self.event_receiver.try_iter().collect::<Vec<_>>()
-        //TODO: Check also that the release keys are previously pressed
-        //TODO: Check also that the pressed keys not are previously pressed
+        //TODO: filter Key::Unknown
+        let mut new_events = Vec::new();
+        for event in self.event_receiver.try_iter() {
+            match event {
+                KeyEvent::Pressed(key) => {
+                    if !self.state.contains(&key) {
+                        self.state.insert(key);
+                        new_events.push(event);
+                    }
+                },
+                KeyEvent::Released(key) => {
+                    if self.state.contains(&key) {
+                        self.state.remove(&key);
+                        new_events.push(event);
+                    }
+                },
+            }
+        }
+        new_events
     }
 
     fn process_input_event(sender: &Sender<KeyEvent>) {
@@ -100,12 +108,124 @@ impl Keyboard {
         thread::sleep(time::Duration::from_millis(1));
     }
 
-    fn transform_input_key(_input_key: &ct::event::KeyCode) -> Key {
-        Key::Unknown
+    fn transform_input_key(input_key: &ct::event::KeyCode) -> Key {
+        match input_key {
+            ct::event::KeyCode::Enter => Key::Enter,
+            ct::event::KeyCode::Esc => Key::Esc,
+            ct::event::KeyCode::Char(c) => match c {
+                ' ' => Key::Space,
+                'a' => Key::A,
+                'b' => Key::B,
+                'c' => Key::C,
+                'd' => Key::D,
+                'e' => Key::E,
+                'f' => Key::F,
+                'g' => Key::G,
+                'h' => Key::H,
+                'i' => Key::I,
+                'j' => Key::J,
+                'k' => Key::K,
+                'l' => Key::L,
+                'm' => Key::M,
+                'n' => Key::N,
+                'o' => Key::O,
+                'p' => Key::P,
+                'q' => Key::Q,
+                'r' => Key::R,
+                's' => Key::S,
+                't' => Key::T,
+                'u' => Key::U,
+                'v' => Key::V,
+                'w' => Key::W,
+                'x' => Key::X,
+                'y' => Key::Y,
+                'z' => Key::Z,
+                '0' => Key::Num0,
+                '1' => Key::Num1,
+                '2' => Key::Num2,
+                '3' => Key::Num3,
+                '4' => Key::Num4,
+                '5' => Key::Num5,
+                '6' => Key::Num6,
+                '7' => Key::Num7,
+                '8' => Key::Num8,
+                '9' => Key::Num9,
+                _ => Key::Unknown
+            },
+            ct::event::KeyCode::F(n) => match n {
+                1 => Key::F1,
+                2 => Key::F1,
+                3 => Key::F1,
+                4 => Key::F1,
+                5 => Key::F1,
+                6 => Key::F1,
+                7 => Key::F1,
+                8 => Key::F1,
+                9 => Key::F1,
+                10 => Key::F1,
+                11 => Key::F1,
+                12 => Key::F1,
+                _ => unreachable!()
+            },
+            _ => Key::Unknown,
+        }
     }
 
-    fn transform_device_key(_device_key: &dq::Keycode) -> Key {
-        Key::Unknown
+    fn transform_device_key(device_key: &dq::Keycode) -> Key {
+        match device_key {
+            dq::Keycode::Escape => Key::Esc,
+            dq::Keycode::Space => Key::Space,
+            dq::Keycode::Enter => Key::Enter,
+            dq::Keycode::A => Key::A,
+            dq::Keycode::B => Key::B,
+            dq::Keycode::C => Key::C,
+            dq::Keycode::D => Key::D,
+            dq::Keycode::E => Key::E,
+            dq::Keycode::F => Key::F,
+            dq::Keycode::G => Key::G,
+            dq::Keycode::H => Key::H,
+            dq::Keycode::I => Key::I,
+            dq::Keycode::J => Key::J,
+            dq::Keycode::K => Key::K,
+            dq::Keycode::L => Key::L,
+            dq::Keycode::M => Key::M,
+            dq::Keycode::N => Key::N,
+            dq::Keycode::O => Key::O,
+            dq::Keycode::P => Key::P,
+            dq::Keycode::Q => Key::Q,
+            dq::Keycode::R => Key::R,
+            dq::Keycode::S => Key::S,
+            dq::Keycode::T => Key::T,
+            dq::Keycode::U => Key::U,
+            dq::Keycode::V => Key::V,
+            dq::Keycode::W => Key::W,
+            dq::Keycode::X => Key::X,
+            dq::Keycode::Y => Key::Y,
+            dq::Keycode::Z => Key::Z,
+            dq::Keycode::Key0 => Key::Num0,
+            dq::Keycode::Key1 => Key::Num1,
+            dq::Keycode::Key2 => Key::Num2,
+            dq::Keycode::Key3 => Key::Num3,
+            dq::Keycode::Key4 => Key::Num4,
+            dq::Keycode::Key5 => Key::Num5,
+            dq::Keycode::Key6 => Key::Num6,
+            dq::Keycode::Key7 => Key::Num7,
+            dq::Keycode::Key8 => Key::Num8,
+            dq::Keycode::Key9 => Key::Num9,
+            dq::Keycode::F1 => Key::F1,
+            dq::Keycode::F2 => Key::F2,
+            dq::Keycode::F3 => Key::F3,
+            dq::Keycode::F4 => Key::F4,
+            dq::Keycode::F5 => Key::F5,
+            dq::Keycode::F6 => Key::F6,
+            dq::Keycode::F7 => Key::F7,
+            dq::Keycode::F8 => Key::F8,
+            dq::Keycode::F9 => Key::F9,
+            dq::Keycode::F10 => Key::F10,
+            dq::Keycode::F11 => Key::F11,
+            dq::Keycode::F12 => Key::F12,
+            _ => Key::Unknown,
+        }
     }
 }
 
