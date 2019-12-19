@@ -1,6 +1,7 @@
-use ruscii::terminal::{self, Config, State, Window, Pencil, Color};
-use ruscii::input::{self, KeyDown, Key};
-use ruscii::gui::FPSCounter;
+use ruscii::app::{App, Config, State};
+use ruscii::terminal::{Window, Pencil, Color};
+use ruscii::keyboard::{KeyEvent, Key};
+use ruscii::gui::{FPSCounter};
 
 
 struct GameState {
@@ -15,42 +16,45 @@ impl GameState {
             (self.player_pos.0 as i16 + self.player_move.0),
             (self.player_pos.1 as i16 + self.player_move.1)
             );
+        self.player_move = (0, 0);
+
         if future_pos.0 < (self.map_dim.0 - 1) as i16
           && future_pos.0 > 0
           && future_pos.1 < (self.map_dim.1 - 1) as i16
           && future_pos.1 > 0 {
             self.player_pos = (future_pos.0 as u16, future_pos.1 as u16);
         }
-        self.player_move = (0, 0)
     }
 }
 
 
 fn main() {
-    let (width, height) = terminal::size();
+    let mut app = App::config(Config::new().fps(20));
+    let (width, height) = app.window().size();
     let mut fps_counter = FPSCounter::new();
-    let mut game_state = GameState{
+    let mut game_state = GameState {
         player_pos: (width / 4, height / 4),
         player_move: (0, 0),
         map_dim: (width / 2, height / 2)
     };
 
-    terminal::run(Config::new().fps(30), &mut |term_state: &mut State, window: &mut Window| {
+    app.run(|state: &mut State, window: &mut Window| {
         fps_counter.update();
 
-        for key_down in input::get_keys_down() {
-            match key_down {
-                KeyDown::Key(Key::Esc) => term_state.abort = true,
-                KeyDown::Key(Key::Q) => term_state.abort = true,
-                KeyDown::Ctrl(Key::C) => term_state.abort = true,
+        for key_event in state.keyboard().last_key_events() {
+            match key_event {
+                KeyEvent::Pressed(Key::Esc) => state.stop(),
+                KeyEvent::Pressed(Key::Q) => state.stop(),
+                _ => (),
+            }
+        }
 
-                KeyDown::Key(key) => match key {
-                    Key::H | Key::A => game_state.player_move = (-2, 0),
-                    Key::J | Key::S => game_state.player_move = (0, 1),
-                    Key::K | Key::W => game_state.player_move = (0, -1),
-                    Key::L | Key::D => game_state.player_move = (2, 0),
-                    _ => (),
-                }
+        for key_down in state.keyboard().get_keys_down() {
+            match key_down {
+                Key::H | Key::A => game_state.player_move = (-2, 0),
+                Key::J | Key::S => game_state.player_move = (0, 1),
+                Key::K | Key::W => game_state.player_move = (0, -1),
+                Key::L | Key::D => game_state.player_move = (2, 0),
                 _ => (),
             }
         }

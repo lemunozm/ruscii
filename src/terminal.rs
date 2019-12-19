@@ -269,6 +269,10 @@ impl Window {
         &mut self.canvas
     }
 
+    pub fn size(&self) -> (u16, u16) {
+        self.canvas.dimension()
+    }
+
     pub fn open(&mut self) {
         ct::queue!(self.target, ct::terminal::EnterAlternateScreen).unwrap();
         ct::queue!(self.target, ct::style::ResetColor).unwrap();

@@ -1,5 +1,8 @@
-use super::keyboard::{Keyboard, KeyEvent};
+use super::keyboard::{Keyboard};
 use super::terminal::{Window};
+
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc};
 use std::{thread, time};
 
 pub struct Config {
@@ -19,48 +22,88 @@ impl Config {
 
 
 pub struct State {
-    pub abort: bool,
-    pub dt: time::Duration,
+    running: Arc<AtomicBool>,
     keyboard: Keyboard,
+    pub(self) dt: time::Duration,
 }
 
 impl State {
     pub fn new() -> State {
         State {
-            abort: false,
+            running: Arc::new(AtomicBool::new(false)),
             dt: time::Duration::new(0, 0),
             keyboard: Keyboard::new(),
         }
     }
 
-    pub fn consume_key_events(&mut self) -> Vec<KeyEvent> {
-       self.keyboard.consume_key_events()
+    pub fn run(&self) {
+        self.running.store(true, Ordering::SeqCst);
+    }
+
+    pub fn stop(&self) {
+        self.running.store(false, Ordering::SeqCst);
+    }
+
+    pub fn is_running(&self) -> bool {
+       self.running.load(Ordering::SeqCst)
+    }
+
+    pub fn keyboard(&self) -> &Keyboard {
+        &self.keyboard
+    }
+
+    pub fn dt(&self) -> &time::Duration {
+        &self.dt
     }
 }
 
-
-pub fn run<F>(config: Config, mut frame_action: F)
-where F: FnMut(&mut State, &mut Window) {
-    let expected_duration = time::Duration::from_nanos(1_000_000_000 / config.fps as u64);
-    let mut window = Window::new();
-    let mut state = State::new();
-    window.open();
-    loop {
-        let now = time::Instant::now();
-        window.clear();
-
-        frame_action(&mut state, &mut window);
-        if state.abort {
-            break;
-        }
-
-        window.update();
-
-        state.dt = now.elapsed();
-        if let Some(time) = expected_duration.checked_sub(state.dt) {
-            thread::sleep(time);
-        }
-    }
-    window.close();
+pub struct App {
+    config: Config,
+    state: State,
+    window: Window,
 }
 
+impl App {
+    pub fn new() -> App {
+        App {
+            config: Config::new(),
+            state: State::new(),
+            window: Window::new(),
+        }
+    }
+
+    pub fn config(config: Config) -> App {
+        App {
+            config,
+            state: State::new(),
+            window: Window::new(),
+        }
+    }
+
+    pub fn window(&self) -> &Window {
+        &self.window
+    }
+
+    pub fn run<F>(&mut self, mut frame_action: F)
+    where F: FnMut(&mut State, &mut Window) {
+        let expected_duration = time::Duration::from_nanos(1_000_000_000 / self.config.fps as u64);
+        self.state.run();
+        self.window.open();
+
+        while self.state.is_running() {
+            let now = time::Instant::now();
+            self.window.clear();
+
+            self.state.keyboard.consume_key_events();
+            frame_action(&mut self.state, &mut self.window);
+
+            self.window.update();
+
+            self.state.dt = now.elapsed();
+            if let Some(time) = expected_duration.checked_sub(self.state.dt) {
+                thread::sleep(time);
+            }
+        }
+        self.window.close();
+    }
+}

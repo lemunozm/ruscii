@@ -1,23 +1,24 @@
-use ruscii::app::{self, Config, State};
+use ruscii::app::{App, State};
 use ruscii::terminal::{Window, Pencil};
 use ruscii::keyboard::{KeyEvent, Key};
 
 fn main() {
-    let mut events = Vec::new();
+    let mut key_events = Vec::new();
+    let mut app = App::new();
 
-    app::run(Config::new(), &mut |state: &mut State, window: &mut Window| {
+    app.run(|state: &mut State, window: &mut Window| {
         let mut pencil = Pencil::new(window.canvas_mut());
         pencil.draw_text("Press Q for exit", (0, 0)).set_origin((0, 3));
 
-        for event in state.consume_key_events() {
-            events.push(event);
-            if let KeyEvent::Pressed(Key::Q) = event {
-                state.abort = true;
+        for key_event in state.keyboard().last_key_events() {
+            key_events.push(*key_event);
+            if let KeyEvent::Pressed(Key::Q) = key_event {
+                state.stop();
             }
         }
 
-        for (i, event) in events.iter().rev().enumerate() {
-            pencil.draw_text(&format!("{:?}", event), (0, i as u16));
+        for (i, key_event) in key_events.iter().rev().enumerate() {
+            pencil.draw_text(&format!("{:?}", key_event), (0, i as u16));
         }
     });
 }

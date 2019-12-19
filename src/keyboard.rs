@@ -31,6 +31,7 @@ pub struct Keyboard {
     event_receiver: Receiver<KeyEvent>,
     threads_running: Arc<AtomicBool>,
     state: HashSet<Key>,
+    last_key_events: Vec<KeyEvent>,
 }
 
 impl Keyboard {
@@ -62,28 +63,37 @@ impl Keyboard {
             event_receiver: receiver,
             threads_running,
             state: HashSet::new(),
+            last_key_events: Vec::new(),
         }
     }
 
-    pub fn consume_key_events(&mut self) -> Vec<KeyEvent> {
-        let mut new_events = Vec::new();
+    pub fn consume_key_events(&mut self) -> &Vec<KeyEvent> {
+        self.last_key_events.clear();
         for event in self.event_receiver.try_iter() {
             match event {
                 KeyEvent::Pressed(key) => {
                     if !self.state.contains(&key) {
                         self.state.insert(key);
-                        new_events.push(event);
+                        self.last_key_events.push(event);
                     }
                 },
                 KeyEvent::Released(key) => {
                     if self.state.contains(&key) {
                         self.state.remove(&key);
-                        new_events.push(event);
+                        self.last_key_events.push(event);
                     }
                 },
             }
         }
-        new_events
+        &self.last_key_events
+    }
+
+    pub fn last_key_events(&self) -> &Vec<KeyEvent> {
+        &self.last_key_events
+    }
+
+    pub fn get_keys_down(&self) -> &HashSet<Key> {
+        &self.state
     }
 
     fn process_input_event(sender: &Sender<KeyEvent>) {
