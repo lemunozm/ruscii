@@ -1,5 +1,4 @@
-//extern crate lazy_static;
-
+pub mod app;
+pub mod gui;
 pub mod terminal;
 pub mod keyboard;
-pub mod gui;

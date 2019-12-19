@@ -1,14 +1,14 @@
-use ruscii::terminal::{self, Config, State, Window, Pencil};
+use ruscii::app::{self, Config, State};
+use ruscii::terminal::{Window, Pencil};
 use ruscii::keyboard::{Keyboard, KeyEvent, Key};
 
 fn main() {
     let mut keyboard = Keyboard::new();
     let mut events = Vec::new();
 
-    terminal::run(Config::new(), &mut |state: &mut State, window: &mut Window| {
+    app::run(Config::new(), &mut |state: &mut State, window: &mut Window| {
         let mut pencil = Pencil::new(window.canvas_mut());
-        pencil.draw_text("Press Q for exit", (0, 0));
-        pencil.set_origin((0, 3));
+        pencil.draw_text("Press Q for exit", (0, 0)).set_origin((0, 3));
 
         for event in keyboard.consume_key_events() {
             events.push(event);

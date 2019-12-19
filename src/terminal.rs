@@ -1,7 +1,6 @@
 use std::io;
 use std::io::Write;
 use std::io::BufWriter;
-use std::{thread, time};
 
 use crossterm as ct;
 
@@ -294,10 +293,6 @@ impl Window {
         self.target.flush().unwrap();
     }
 
-    pub fn input_events() {
-        //TODO
-    }
-
     pub fn clear(&mut self) {
         if size().0 != self.canvas.dimension().0 || size().1 != self.canvas.dimension().1 {
             self.canvas = Canvas::new(size(), self.canvas.default_element());
@@ -348,64 +343,7 @@ impl Window {
     }
 }
 
-// ================================================================================
-// CONFIG and STATE
-// ================================================================================
-pub struct Config {
-    pub fps: u32,
-}
-
-impl Config {
-    pub fn new() -> Config {
-        Config {fps: 60}
-    }
-
-    pub fn fps(mut self, fps: u32) -> Config {
-        self.fps = fps;
-        self
-    }
-}
-
-pub struct State {
-    pub abort: bool,
-    pub dt: time::Duration,
-}
-
-impl State {
-    pub fn new() -> State {
-        State {abort: false, dt: time::Duration::new(0, 0) }
-    }
-}
-
-// ================================================================================
-// MODULE
-// ================================================================================
 pub fn size() -> (u16, u16) {
     ct::terminal::size().unwrap()
-}
-
-pub fn run<F>(config: Config, mut frame_action: F)
-where F: FnMut(&mut State, &mut Window) {
-    let expected_duration = time::Duration::from_nanos(1_000_000_000 / config.fps as u64);
-    let mut window = Window::new();
-    let mut state = State::new();
-    window.open();
-    loop {
-        let now = time::Instant::now();
-        window.clear();
-
-        frame_action(&mut state, &mut window);
-        if state.abort {
-            break;
-        }
-
-        window.update();
-
-        state.dt = now.elapsed();
-        if let Some(time) = expected_duration.checked_sub(state.dt) {
-            thread::sleep(time);
-        }
-    }
-    window.close();
 }
 
