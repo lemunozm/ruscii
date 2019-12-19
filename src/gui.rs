@@ -1,4 +1,4 @@
-use std::time::SystemTime;
+use std::time::{SystemTime};
 
 pub struct FPSCounter {
     fps: u32,

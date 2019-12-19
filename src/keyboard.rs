@@ -1,14 +1,14 @@
+use std::sync::mpsc::{self, Sender, Receiver};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc};
+use std::thread::{self, JoinHandle};
+use std::collections::{HashSet};
+use std::time;
+
 use crossterm as ct;
 use device_query as dq;
 use dq::DeviceQuery;
 
-use std::sync::mpsc::{self, Sender, Receiver};
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
-use std::thread::{self, JoinHandle};
-use std::collections::HashSet;
-
-use std::time;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum Key {

@@ -1,4 +1,5 @@
-use super::terminal::Window;
+use super::keyboard::{Keyboard, KeyEvent};
+use super::terminal::{Window};
 use std::{thread, time};
 
 pub struct Config {
@@ -20,14 +21,20 @@ impl Config {
 pub struct State {
     pub abort: bool,
     pub dt: time::Duration,
+    keyboard: Keyboard,
 }
 
 impl State {
     pub fn new() -> State {
         State {
             abort: false,
-            dt: time::Duration::new(0, 0)
+            dt: time::Duration::new(0, 0),
+            keyboard: Keyboard::new(),
         }
+    }
+
+    pub fn consume_key_events(&mut self) -> Vec<KeyEvent> {
+       self.keyboard.consume_key_events()
     }
 }
 

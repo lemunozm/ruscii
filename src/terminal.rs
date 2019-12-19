@@ -1,6 +1,4 @@
-use std::io;
-use std::io::Write;
-use std::io::BufWriter;
+use std::io::{self, Write, BufWriter};
 
 use crossterm as ct;
 
