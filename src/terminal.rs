@@ -198,13 +198,13 @@ impl<'a> Pencil<'a> {
         self
     }
 
-    pub fn draw_char(&mut self, value: char, pos:(u16, u16)) -> &mut Pencil<'a> {
+    pub fn draw_char(&mut self, value: char, pos: (u16, u16)) -> &mut Pencil<'a> {
         let elem_pos = (self.origin.0 + pos.0, self.origin.1 + pos.1);
         self.draw_element(elem_pos, value);
         self
     }
 
-    pub fn draw_text(&mut self, text: &str, pos:(u16, u16)) -> &mut Pencil<'a> {
+    pub fn draw_text(&mut self, text: &str, pos: (u16, u16)) -> &mut Pencil<'a> {
         let width = self.canvas.dimension().0;
         for (i, value) in text.chars().enumerate() {
             let elem_pos = (self.origin.0 + i as u16 + pos.0, self.origin.1 + pos.1);
@@ -214,7 +214,7 @@ impl<'a> Pencil<'a> {
         self
     }
 
-    pub fn draw_vline(&mut self, value: char, from:(u16, u16), size: u16) -> &mut Pencil<'a> {
+    pub fn draw_vline(&mut self, value: char, from: (u16, u16), size: u16) -> &mut Pencil<'a> {
         let elem_pos = (self.origin.0 + from.0, self.origin.1 + from.1);
         for i in 0..size {
             let position = (elem_pos.0, elem_pos.1 + i);
@@ -223,7 +223,7 @@ impl<'a> Pencil<'a> {
         self
     }
 
-    pub fn draw_hline(&mut self, value: char, from:(u16, u16), size: u16) -> &mut Pencil<'a> {
+    pub fn draw_hline(&mut self, value: char, from: (u16, u16), size: u16) -> &mut Pencil<'a> {
         let elem_pos = (self.origin.0 + from.0, self.origin.1 + from.1);
         for i in 0..size {
             let position = (elem_pos.0 + i, elem_pos.1);

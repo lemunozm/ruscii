@@ -6,14 +6,14 @@ fn main() {
     let mut key_events = Vec::new();
     let mut app = App::new();
 
-    app.run(|state: &mut State, window: &mut Window| {
+    app.run(|app_state: &mut State, window: &mut Window| {
         let mut pencil = Pencil::new(window.canvas_mut());
         pencil.draw_text("Press Q for exit", (0, 0)).set_origin((0, 3));
 
-        for key_event in state.keyboard().last_key_events() {
+        for key_event in app_state.keyboard().last_key_events() {
             key_events.push(*key_event);
             if let KeyEvent::Pressed(Key::Q) = key_event {
-                state.stop();
+                app_state.stop();
             }
         }
 

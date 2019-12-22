@@ -25,14 +25,16 @@ pub struct State {
     running: Arc<AtomicBool>,
     keyboard: Keyboard,
     pub(self) dt: time::Duration,
+    pub(self) step: usize,
 }
 
 impl State {
     pub fn new() -> State {
         State {
             running: Arc::new(AtomicBool::new(false)),
-            dt: time::Duration::new(0, 0),
             keyboard: Keyboard::new(),
+            dt: time::Duration::new(0, 0),
+            step: 0,
         }
     }
 
@@ -54,6 +56,10 @@ impl State {
 
     pub fn dt(&self) -> &time::Duration {
         &self.dt
+    }
+
+    pub fn step(&self) -> usize {
+        self.step
     }
 }
 
@@ -100,6 +106,7 @@ impl App {
             self.window.update();
 
             self.state.dt = now.elapsed();
+            self.state.step += 1;
             if let Some(time) = expected_duration.checked_sub(self.state.dt) {
                 thread::sleep(time);
             }
