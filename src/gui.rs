@@ -29,3 +29,4 @@ impl FPSCounter {
         self.fps
     }
 }
+

@@ -1,5 +1,6 @@
 use ruscii::app::{App, Config, State};
-use ruscii::terminal::{Window, Pencil, Color};
+use ruscii::terminal::{Window, Color};
+use ruscii::drawing::{Pencil, RectCharset};
 use ruscii::keyboard::{KeyEvent, Key};
 use ruscii::spatial::{Vec2};
 use ruscii::gui::{FPSCounter};
@@ -21,7 +22,6 @@ impl GameState {
         }
     }
 }
-
 
 fn main() {
     let mut app = App::config(Config::new().fps(20));
@@ -58,22 +58,10 @@ fn main() {
 
         Pencil::new(window.canvas_mut())
             .draw_text(&format!("FPS: {}", fps_counter.count()), Vec2::xy(0, 0))
-            .draw_text("Press 'Q' or 'Esc' for exit", Vec2::y(2));
-
-        Pencil::new(window.canvas_mut())
+            .draw_text("Press 'Q' or 'Esc' for exit", Vec2::y(2))
             .set_origin(size / 4)
             .set_foreground(Color::Grey)
-            .draw_char('╔', Vec2::xy(0, 0))
-            .draw_char('╗', Vec2::x(state.map_dim.x - 1))
-            .draw_char('╝', state.map_dim - Vec2::xy(1, 1))
-            .draw_char('╚', Vec2::y(state.map_dim.y - 1))
-            .draw_hline('═', Vec2::x(1), state.map_dim.x - 2)
-            .draw_hline('═', Vec2::xy(1, state.map_dim.y - 1), state.map_dim.x - 2)
-            .draw_vline('║', Vec2::y(1), state.map_dim.y - 2)
-            .draw_vline('║', Vec2::xy(size.x / 2 - 1, 1), state.map_dim.y - 2);
-
-        Pencil::new(window.canvas_mut())
-            .set_origin(size / 4)
+            .draw_rect(Vec2::new(), state.map_dim, &RectCharset::double_lines())
             .set_foreground(Color::Yellow)
             .draw_char('A', state.player_pos);
     });

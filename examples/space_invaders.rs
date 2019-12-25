@@ -1,5 +1,6 @@
 use ruscii::app::{App, State};
-use ruscii::terminal::{Window, Pencil, Color, Style};
+use ruscii::terminal::{Window, Color, Style};
+use ruscii::drawing::{Pencil};
 use ruscii::keyboard::{KeyEvent, Key};
 use ruscii::spatial::{Vec2};
 use ruscii::gui::{FPSCounter};

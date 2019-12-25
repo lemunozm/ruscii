@@ -52,6 +52,28 @@ impl Sub for Vec2 {
     }
 }
 
+impl Mul for Vec2 {
+    type Output = Vec2;
+
+    fn mul(self, other: Vec2) -> Vec2 {
+        Vec2 {
+            x: self.x * other.x,
+            y: self.y * other.y,
+        }
+    }
+}
+
+impl Div for Vec2 {
+    type Output = Vec2;
+
+    fn div(self, other: Vec2) -> Vec2 {
+        Vec2 {
+            x: self.x / other.x,
+            y: self.y / other.y,
+        }
+    }
+}
+
 impl<T: ToPrimitive> Mul<T> for Vec2 {
     type Output = Vec2;
 
@@ -99,15 +121,27 @@ impl SubAssign for Vec2 {
     }
 }
 
-impl<T: ToPrimitive> MulAssign<T> for Vec2 {
-    fn mul_assign(&mut self, other: T) {
+impl MulAssign for Vec2 {
+    fn mul_assign(&mut self, other: Vec2) {
         *self = *self * other
     }
 }
 
-impl<T: ToPrimitive> DivAssign<T> for Vec2 {
-    fn div_assign(&mut self, other: T) {
+impl DivAssign for Vec2 {
+    fn div_assign(&mut self, other: Vec2) {
         *self = *self / other
+    }
+}
+
+impl<T: ToPrimitive> MulAssign<T> for Vec2 {
+    fn mul_assign(&mut self, scalar: T) {
+        *self = *self * scalar
+    }
+}
+
+impl<T: ToPrimitive> DivAssign<T> for Vec2 {
+    fn div_assign(&mut self, scalar: T) {
+        *self = *self / scalar
     }
 }
 

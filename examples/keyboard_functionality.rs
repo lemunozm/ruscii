@@ -1,5 +1,6 @@
 use ruscii::app::{App, State};
-use ruscii::terminal::{Window, Pencil};
+use ruscii::terminal::{Window};
+use ruscii::drawing::{Pencil};
 use ruscii::keyboard::{KeyEvent, Key};
 use ruscii::spatial::{Vec2};
 
