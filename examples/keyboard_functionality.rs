@@ -1,6 +1,7 @@
 use ruscii::app::{App, State};
 use ruscii::terminal::{Window, Pencil};
 use ruscii::keyboard::{KeyEvent, Key};
+use ruscii::spatial::{Vec2};
 
 fn main() {
     let mut key_events = Vec::new();
@@ -8,7 +9,7 @@ fn main() {
 
     app.run(|app_state: &mut State, window: &mut Window| {
         let mut pencil = Pencil::new(window.canvas_mut());
-        pencil.draw_text("Press Q for exit", (0, 0)).set_origin((0, 3));
+        pencil.draw_text("Press Q for exit", Vec2::xy(0, 0)).set_origin(Vec2::xy(0, 3));
 
         for key_event in app_state.keyboard().last_key_events() {
             key_events.push(*key_event);
@@ -18,7 +19,7 @@ fn main() {
         }
 
         for (i, key_event) in key_events.iter().rev().enumerate() {
-            pencil.draw_text(&format!("{:?}", key_event), (0, i as u16));
+            pencil.draw_text(&format!("{:?}", key_event), Vec2::y(i));
         }
     });
 }

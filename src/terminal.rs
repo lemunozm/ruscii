@@ -1,6 +1,8 @@
 use std::io::{self, Write, BufWriter};
 
 use crossterm as ct;
+use super::spatial::Vec2;
+use num::cast::ToPrimitive;
 
 // ================================================================================
 // VISUAL ELEMENT
@@ -77,14 +79,14 @@ impl VisualElement {
 // ================================================================================
 pub struct Canvas {
     data: Vec<VisualElement>,
-    dimension: (u16, u16),
+    dimension: Vec2,
     default_element: VisualElement,
 }
 
 impl Canvas {
-    pub fn new(dimension: (u16, u16), default_element: &VisualElement) -> Canvas {
+    pub fn new(dimension: Vec2, default_element: &VisualElement) -> Canvas {
         let mut data = Vec::new();
-        data.resize((dimension.0 * dimension.1) as usize, *default_element);
+        data.resize((dimension.x * dimension.y) as usize, *default_element);
         Canvas {
             data,
             dimension,
@@ -100,24 +102,26 @@ impl Canvas {
         self.default_element = *element;
     }
 
-    pub fn dimension(&self) -> (u16, u16) {
+    pub fn dimension(&self) -> Vec2 {
         self.dimension
     }
 
-    pub fn contains(&self, pos: (u16, u16)) -> bool {
-        pos.0 < self.dimension.0 && pos.1 < self.dimension.1
+    pub fn contains(&self, pos: Vec2) -> bool {
+        0 <= pos.x && 0 <= pos.y &&
+        pos.x < self.dimension.x &&
+        pos.y < self.dimension.y
     }
 
-    pub fn elem(&self, pos: (u16, u16)) -> Option<&VisualElement> {
+    pub fn elem(&self, pos: Vec2) -> Option<&VisualElement> {
         if self.contains(pos) {
-            Some(&self.data[(pos.1 * self.dimension.0 + pos.0) as usize])
+            Some(&self.data[(pos.y * self.dimension.x + pos.x) as usize])
         }
         else { None }
     }
 
-    pub fn elem_mut(&mut self, pos: (u16, u16)) -> Option<&mut VisualElement> {
+    pub fn elem_mut(&mut self, pos: Vec2) -> Option<&mut VisualElement> {
         if self.contains(pos) {
-            Some(&mut self.data[(pos.1 * self.dimension.0 + pos.0) as usize])
+            Some(&mut self.data[(pos.y * self.dimension.x + pos.x) as usize])
         }
         else { None }
     }
@@ -139,7 +143,7 @@ impl Canvas {
 // PENCIL
 // ================================================================================
 pub struct Pencil<'a> {
-    origin: (u16, u16),
+    origin: Vec2,
     foreground: Color,
     background: Color,
     style: Style,
@@ -149,7 +153,7 @@ pub struct Pencil<'a> {
 impl<'a> Pencil<'a> {
     pub fn new(canvas: &'a mut Canvas) -> Pencil {
         Pencil {
-            origin: (0, 0),
+            origin: Vec2::new(),
             foreground: canvas.default_element().foreground,
             background: canvas.default_element().background,
             style: canvas.default_element().style,
@@ -157,13 +161,12 @@ impl<'a> Pencil<'a> {
         }
     }
 
-    pub fn origin(&self) -> (u16, u16) {
+    pub fn origin(&self) -> Vec2 {
         self.origin
     }
 
-    pub fn dimension(&self) -> (u16, u16) {
-        (self.canvas.dimension().0 - self.origin.0,
-        self.canvas.dimension().1 - self.origin.1)
+    pub fn dimension(&self) -> Vec2 {
+        self.canvas.dimension() - self.origin
     }
 
     pub fn foreground(&self) -> &Color {
@@ -178,7 +181,7 @@ impl<'a> Pencil<'a> {
         &self.style
     }
 
-    pub fn set_origin(&mut self, pos: (u16, u16)) -> &mut Pencil<'a> {
+    pub fn set_origin(&mut self, pos: Vec2) -> &mut Pencil<'a> {
         self.origin = pos;
         self
     }
@@ -198,41 +201,38 @@ impl<'a> Pencil<'a> {
         self
     }
 
-    pub fn draw_char(&mut self, value: char, pos: (u16, u16)) -> &mut Pencil<'a> {
-        let elem_pos = (self.origin.0 + pos.0, self.origin.1 + pos.1);
-        self.draw_element(elem_pos, value);
+    pub fn draw_char(&mut self, value: char, pos: Vec2) -> &mut Pencil<'a> {
+        self.draw_element(self.origin + pos, value);
         self
     }
 
-    pub fn draw_text(&mut self, text: &str, pos: (u16, u16)) -> &mut Pencil<'a> {
-        let width = self.canvas.dimension().0;
+    pub fn draw_text(&mut self, text: &str, pos: Vec2) -> &mut Pencil<'a> {
+        let width = self.canvas.dimension().x;
         for (i, value) in text.chars().enumerate() {
-            let elem_pos = (self.origin.0 + i as u16 + pos.0, self.origin.1 + pos.1);
-            let elem_pos = (elem_pos.0 % width, elem_pos.1 + elem_pos.0 / width);
+            let elem_pos = self.origin + pos + Vec2::x(i);
+            let elem_pos = Vec2::xy(elem_pos.x % width, elem_pos.y + elem_pos.x / width);
             self.draw_element(elem_pos, value);
         }
         self
     }
 
-    pub fn draw_vline(&mut self, value: char, from: (u16, u16), size: u16) -> &mut Pencil<'a> {
-        let elem_pos = (self.origin.0 + from.0, self.origin.1 + from.1);
-        for i in 0..size {
-            let position = (elem_pos.0, elem_pos.1 + i);
-            self.draw_element(position, value);
+    pub fn draw_vline<T: ToPrimitive>(&mut self, value: char, from: Vec2, size: T) -> &mut Pencil<'a> {
+        let elem_pos = self.origin + from;
+        for i in 0..size.to_usize().unwrap() {
+            self.draw_element(elem_pos + Vec2::y(i), value);
         }
         self
     }
 
-    pub fn draw_hline(&mut self, value: char, from: (u16, u16), size: u16) -> &mut Pencil<'a> {
-        let elem_pos = (self.origin.0 + from.0, self.origin.1 + from.1);
-        for i in 0..size {
-            let position = (elem_pos.0 + i, elem_pos.1);
-            self.draw_element(position, value);
+    pub fn draw_hline<T: ToPrimitive>(&mut self, value: char, from: Vec2, size: T) -> &mut Pencil<'a> {
+        let elem_pos = self.origin + from;
+        for i in 0..size.to_usize().unwrap() {
+            self.draw_element(elem_pos + Vec2::x(i), value);
         }
         self
     }
 
-    fn draw_element(&mut self, pos: (u16, u16), value: char) {
+    fn draw_element(&mut self, pos: Vec2, value: char) {
         match self.canvas.elem_mut(pos) {
             Some(element) => {
                 element.value = value;
@@ -257,7 +257,7 @@ impl Window {
     pub fn new() -> Window {
         Window {
             canvas: Canvas::new(size(), &VisualElement::new()),
-            target: BufWriter::with_capacity(size().0 as usize * size().1 as usize * 50, io::stdout()),
+            target: BufWriter::with_capacity(size().x as usize * size().y as usize * 50, io::stdout()),
         }
     }
 
@@ -269,7 +269,7 @@ impl Window {
         &mut self.canvas
     }
 
-    pub fn size(&self) -> (u16, u16) {
+    pub fn size(&self) -> Vec2 {
         self.canvas.dimension()
     }
 
@@ -296,7 +296,7 @@ impl Window {
     }
 
     pub fn clear(&mut self) {
-        if size().0 != self.canvas.dimension().0 || size().1 != self.canvas.dimension().1 {
+        if self.canvas.dimension() != size() {
             self.canvas = Canvas::new(size(), self.canvas.default_element());
         }
         else {
@@ -345,7 +345,8 @@ impl Window {
     }
 }
 
-pub fn size() -> (u16, u16) {
-    ct::terminal::size().unwrap()
+pub fn size() -> Vec2 {
+    let (x, y) = ct::terminal::size().unwrap();
+    Vec2::xy(x, y)
 }
 
