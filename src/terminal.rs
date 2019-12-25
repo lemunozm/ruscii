@@ -172,13 +172,21 @@ impl Window {
         ct::queue!(self.target, ct::style::SetAttribute(ct::style::Attribute::Reset)).unwrap();
         ct::queue!(self.target, ct::cursor::Hide).unwrap();
 
-        ct::terminal::enable_raw_mode().unwrap();
+        self.raw_mode(true);
 
         self.target.flush().unwrap();
     }
 
+    pub fn raw_mode(&mut self, enable: bool) {
+        if enable {
+            ct::terminal::enable_raw_mode().unwrap();
+        } else {
+            ct::terminal::disable_raw_mode().unwrap();
+        }
+    }
+
     pub fn close(&mut self) {
-        ct::terminal::disable_raw_mode().unwrap();
+        self.raw_mode(false);
 
         ct::queue!(self.target, ct::cursor::Show).unwrap();
         ct::queue!(self.target, ct::style::SetAttribute(ct::style::Attribute::Reset)).unwrap();

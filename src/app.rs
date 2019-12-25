@@ -3,7 +3,9 @@ use super::terminal::{Window};
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc};
-use std::{thread, time};
+use std::{thread, time, panic};
+
+use std::io::{self, BufRead};
 
 pub struct Config {
     pub fps: u32,
@@ -94,23 +96,35 @@ impl App {
     where F: FnMut(&mut State, &mut Window) {
         let expected_duration = time::Duration::from_nanos(1_000_000_000 / self.config.fps as u64);
         self.state.run();
-        self.window.open();
 
-        while self.state.is_running() {
-            let now = time::Instant::now();
-            self.window.clear();
+        let result = panic::catch_unwind(panic::AssertUnwindSafe(||{
+            self.window.open();
+            while self.state.is_running() {
 
-            self.state.keyboard.consume_key_events();
-            frame_action(&mut self.state, &mut self.window);
+                let now = time::Instant::now();
+                self.window.clear();
 
-            self.window.update();
+                self.state.keyboard.consume_key_events();
 
-            self.state.dt = now.elapsed();
-            self.state.step += 1;
-            if let Some(time) = expected_duration.checked_sub(self.state.dt) {
-                thread::sleep(time);
+                self.window.raw_mode(false);
+                frame_action(&mut self.state, &mut self.window);
+                self.window.raw_mode(true);
+
+                self.window.update();
+
+                self.state.dt = now.elapsed();
+                self.state.step += 1;
+                if let Some(time) = expected_duration.checked_sub(self.state.dt) {
+                    thread::sleep(time);
+                }
             }
+            self.window.close();
+        }));
+
+        if let Err(_) = result {
+            println!("\n\nPress enter to recover the terminal");
+            io::stdin().lock().lines().next().unwrap().unwrap();
+            self.window.close();
         }
-        self.window.close();
     }
 }
