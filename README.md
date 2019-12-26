@@ -3,10 +3,10 @@
 [![downloads](https://img.shields.io/crates/d/ruscii)](https://crates.io/crates/ruscii)
 
 # `ruscii`
-An easy library to make terminal applications/games in *rust*.
+An easy library to make terminal applications and games in *rust*.
 
-The intended of this project is to ease the game development in terminals.
-Any contribution, issue, or pull request is welcome!
+The aim of this project is to make easier the game development in terminals.
+Any contribution, issue, or pull request would be welcome!
 
 ### Features
 - Optimized to render fast in terminals.
@@ -18,9 +18,15 @@ Any contribution, issue, or pull request is welcome!
 ## Examples
 You can found several examples into the [example folder](examples).
 
-To test the example, clone the repo and write:
+To test an example, install `ruscii` with the examples flag and run it.
 ```
-cargo run --example <example_file_name_without_extension> --release
+cargo install ruscii --examples
+~/.cargo/bin/<example_name>
+```
+
+Or clone the repo and execute inside of it:
+```
+cargo run --example <example_name> --release
 ```
 
 ### Some of these examples:
