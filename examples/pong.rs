@@ -125,7 +125,6 @@ fn main() {
             state.update();
         }
 
-
         let score_msg = &format!("Left score: {}  -  Right score: {}", state.left_player.score, state.right_player.score);
 
         Pencil::new(window.canvas_mut())
@@ -133,11 +132,12 @@ fn main() {
             .set_origin(Vec2::xy((win_size.x - score_msg.len() as i32) / 2, (win_size.y - state.dimension.y) / 2 - 1))
             .draw_text(score_msg, Vec2::xy(0, 0))
             .set_origin((win_size - state.dimension) / 2)
-            .draw_rect(Vec2::new(), state.dimension, &RectCharset::double_lines())
+            .draw_rect(&RectCharset::simple_round_lines(), Vec2::new(), state.dimension)
+            .draw_vline('\'', Vec2::xy(state.dimension.x / 2, 1), state.dimension.y - 2)
             .set_foreground(Color::Blue)
-            .draw_rect(state.left_player.position - Vec2::y(PAD_HEIGHT), Vec2::xy(2, PAD_HEIGHT * 2), &RectCharset::double_lines())
+            .draw_rect(&RectCharset::double_lines(), state.left_player.position - Vec2::y(PAD_HEIGHT), Vec2::xy(2, PAD_HEIGHT * 2))
             .set_foreground(Color::Red)
-            .draw_rect(state.right_player.position - Vec2::y(PAD_HEIGHT), Vec2::xy(2, PAD_HEIGHT * 2), &RectCharset::double_lines())
+            .draw_rect(&RectCharset::double_lines(), state.right_player.position - Vec2::y(PAD_HEIGHT), Vec2::xy(2, PAD_HEIGHT * 2))
             .set_foreground(Color::Yellow)
             .set_style(Style::Bold)
             .draw_char('o', state.ball_position)

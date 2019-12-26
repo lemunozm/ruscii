@@ -17,7 +17,11 @@ pub struct RectCharset {
 
 impl RectCharset {
     pub fn simple_lines() -> RectCharset {
-        RectCharset::from("══║║╔╗╚╝")
+        RectCharset::from("──││┌┐└┘")
+    }
+
+    pub fn simple_round_lines() -> RectCharset {
+        RectCharset::from("──││╭╮╰╯")
     }
 
     pub fn double_lines() -> RectCharset {
@@ -147,7 +151,7 @@ impl<'a> Pencil<'a> {
         self
     }
 
-    pub fn draw_rect(&mut self, origin: Vec2, dimension: Vec2, charset: &RectCharset) -> &mut Pencil<'a> {
+    pub fn draw_rect(&mut self, charset: &RectCharset, origin: Vec2, dimension: Vec2) -> &mut Pencil<'a> {
         let saved_origin = self.origin();
         self.set_origin(saved_origin + origin)
             .draw_hline(charset.top, Vec2::x(1), dimension.x - 2)

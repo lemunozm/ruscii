@@ -172,6 +172,7 @@ impl Window {
         ct::queue!(self.target, ct::style::SetAttribute(ct::style::Attribute::Reset)).unwrap();
         ct::queue!(self.target, ct::cursor::Hide).unwrap();
 
+        self.clean_state();
         self.raw_mode(true);
 
         self.target.flush().unwrap();
@@ -205,7 +206,7 @@ impl Window {
         }
     }
 
-    pub fn update(&mut self) {
+    pub fn draw(&mut self) {
         self.clean_state();
         let mut last_foreground = self.canvas.default_element().foreground;
         let mut last_background = self.canvas.default_element().background;

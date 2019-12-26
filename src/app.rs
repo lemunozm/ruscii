@@ -110,7 +110,7 @@ impl App {
                 frame_action(&mut self.state, &mut self.window);
                 self.window.raw_mode(true);
 
-                self.window.update();
+                self.window.draw();
 
                 self.state.dt = now.elapsed();
                 self.state.step += 1;
@@ -122,7 +122,7 @@ impl App {
         }));
 
         if let Err(_) = result {
-            println!("\n\nPress enter to recover the terminal");
+            println!("\n\n[Press 'enter' to recover the terminal]");
             io::stdin().lock().lines().next().unwrap().unwrap();
             self.window.close();
         }

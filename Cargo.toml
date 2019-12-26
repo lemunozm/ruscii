@@ -3,6 +3,14 @@ name = "ruscii"
 version = "0.1.0"
 authors = ["Luis Enrique Muñoz Martín <lemunozm@gmail.com>"]
 edition = "2018"
+readme = "README.md"
+license = "Apache-2.0"
+description = "Terminal graphics engine"
+homepage = "https://github.com/lemunozm/ruscii/"
+repository = "https://github.com/lemunozm/ruscii/"
+keywords = ["terminal", "graphics-engine", "console", "game-engine", "key-events"]
+categories = ["game-engines", "game-development", "command-line-interface", "command-line-utilities", "rendering::engine"]
+maintance = "actively-developed"
 
 [dependencies]
 crossterm = "0.14"
