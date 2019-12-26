@@ -5,8 +5,7 @@ use ruscii::keyboard::{KeyEvent, Key};
 use ruscii::spatial::{Vec2};
 use ruscii::gui::{FPSCounter};
 
-use rand;
-use rand::prelude::*;
+use rand::{self, prelude::*};
 
 struct GameState {
     pub dimension: Vec2,
@@ -177,7 +176,7 @@ fn main() {
             return ();
         }
 
-        pencil.set_origin((win_size - state.dimension)/2);
+        pencil.set_origin((win_size - state.dimension) / 2);
         pencil.draw_text(&format!("lives: {}  -  score: {}", state.lives, state.score), Vec2::xy(15, 0));
         pencil.set_foreground(Color::Cyan);
         pencil.draw_char('^', state.spaceship);

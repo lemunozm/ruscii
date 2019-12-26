@@ -34,8 +34,6 @@ fn main() {
     };
 
     app.run(|app_state: &mut State, window: &mut Window| {
-        fps_counter.update();
-
         for key_event in app_state.keyboard().last_key_events() {
             match key_event {
                 KeyEvent::Pressed(Key::Esc) => app_state.stop(),
@@ -46,14 +44,15 @@ fn main() {
 
         for key_down in app_state.keyboard().get_keys_down() {
             match key_down {
-                Key::H | Key::A => state.player_move = Vec2::xy(-2, 0),
-                Key::J | Key::S => state.player_move = Vec2::xy(0, 1),
-                Key::K | Key::W => state.player_move = Vec2::xy(0, -1),
-                Key::L | Key::D => state.player_move = Vec2::xy(2, 0),
+                Key::H | Key::A => state.player_move = Vec2::x(-2),
+                Key::J | Key::S => state.player_move = Vec2::y(1),
+                Key::K | Key::W => state.player_move = Vec2::y(-1),
+                Key::L | Key::D => state.player_move = Vec2::x(2),
                 _ => (),
             }
         }
 
+        fps_counter.update();
         state.update();
 
         Pencil::new(window.canvas_mut())
