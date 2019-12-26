@@ -1,15 +1,17 @@
-[![lancat](https://img.shields.io/crates/v/ruscii.svg)](https://crates.io/crates/ruscii)
-[![license](https://img.shields.io/crates/l/ruscii.svg)](https://www.apache.org/licenses/LICENSE-2.0.txt)
-[![downloads](https://img.shields.io/crates/d/ruscii.svg)](https://crates.io/crates/ruscii)
+[![lancat](https://img.shields.io/crates/v/ruscii)](https://crates.io/crates/ruscii)
+[![license](https://img.shields.io/crates/l/ruscii)](https://www.apache.org/licenses/LICENSE-2.0.txt)
+[![downloads](https://img.shields.io/crates/d/ruscii)](https://crates.io/crates/ruscii)
 
 # `ruscii`
 An easy library to make terminal applications/games in *rust*.
-The intended of this project is to get close the open terminal games to the world, so any contribution, issue, pull request is wellcome!
+
+The intended of this project is to ease the game development in terminals.
+Any contribution, issue, or pull request is welcome!
 
 ### Features
 - Optimized to render fast in terminals.
 - Multi-platform (See [crossterm terminal support](https://github.com/crossterm-rs/crossterm#tested-terminals))
-- Enable key press and release events in terminal (essential for games!)
+- Enable **key press** and **release** events in terminal (essential for games!)
 - Easy to use. Make your terminal game in a few lines!
 - Easy way to recover the terminal state at error.
 
