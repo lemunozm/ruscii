@@ -49,6 +49,10 @@ impl From<&str> for RectCharset {
     }
 }
 
+pub trait Drawable {
+    fn draw(&self, pencil: Pencil);
+}
+
 pub struct Pencil<'a> {
     origin: Vec2,
     foreground: Color,
@@ -65,6 +69,16 @@ impl<'a> Pencil<'a> {
             background: canvas.default_element().background,
             style: canvas.default_element().style,
             canvas,
+        }
+    }
+
+    pub fn new_one(&mut self) -> Pencil {
+        Pencil {
+            origin: self.origin,
+            foreground: self.foreground,
+            background: self.background,
+            style: self.style,
+            canvas: self.canvas,
         }
     }
 
@@ -102,6 +116,11 @@ impl<'a> Pencil<'a> {
 
     pub fn set_origin(&mut self, pos: Vec2) -> &mut Pencil<'a> {
         self.origin = pos;
+        self
+    }
+
+    pub fn move_origin(&mut self, pos: Vec2) -> &mut Pencil<'a> {
+        self.origin += pos;
         self
     }
 
@@ -151,9 +170,8 @@ impl<'a> Pencil<'a> {
         self
     }
 
-    pub fn draw_rect(&mut self, charset: &RectCharset, origin: Vec2, dimension: Vec2) -> &mut Pencil<'a> {
-        let saved_origin = self.origin();
-        self.set_origin(saved_origin + origin)
+    pub fn draw_rect(&mut self, charset: &RectCharset, position: Vec2, dimension: Vec2) -> &mut Pencil<'a> {
+        self.move_origin(position)
             .draw_hline(charset.top, Vec2::x(1), dimension.x - 2)
             .draw_hline(charset.bottom, Vec2::xy(1, dimension.y - 1), dimension.x - 2)
             .draw_vline(charset.left, Vec2::y(1), dimension.y - 2)
@@ -162,6 +180,13 @@ impl<'a> Pencil<'a> {
             .draw_char(charset.top_right, Vec2::x(dimension.x - 1))
             .draw_char(charset.bottom_left, Vec2::y(dimension.y - 1))
             .draw_char(charset.bottom_right, dimension - Vec2::xy(1, 1))
-            .set_origin(saved_origin)
+            .move_origin(-position)
+    }
+
+    pub fn draw<D: Drawable>(&mut self, drawable: D, position: Vec2) -> &mut Pencil<'a> {
+        let mut new_pencil = self.new_one();
+        new_pencil.move_origin(position);
+        drawable.draw(new_pencil);
+        self
     }
 }
