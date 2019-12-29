@@ -14,7 +14,7 @@ maintance = "actively-developed"
 
 [dependencies]
 crossterm = "0.14"
-device_query = "0.1"
+device_query = "0.2"
 num = "0.2"
 
 [dev-dependencies]
