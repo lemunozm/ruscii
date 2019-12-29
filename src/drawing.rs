@@ -49,6 +49,14 @@ impl From<&str> for RectCharset {
     }
 }
 
+/*
+pub trait Drawable {
+    fn draw(&Pencil) {
+
+    }
+}
+*/
+
 pub struct Pencil<'a> {
     origin: Vec2,
     foreground: Color,
@@ -163,5 +171,17 @@ impl<'a> Pencil<'a> {
             .draw_char(charset.bottom_left, Vec2::y(dimension.y - 1))
             .draw_char(charset.bottom_right, dimension - Vec2::xy(1, 1))
             .set_origin(saved_origin)
+    }
+}
+
+impl Clone for Pencil<'_> {
+    fn clone(&self) -> Pencil {
+        Pencil {
+            origin: self.origin,
+            foreground: self.foreground,
+            background: self.background,
+            style: self.style,
+            canvas: self.canvas,
+        }
     }
 }
