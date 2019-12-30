@@ -8,7 +8,7 @@ An easy library to make terminal applications and games in *rust*.
 The aim of this project is to make easier the game development in terminals.
 Any contribution, issue, or pull request would be welcome!
 
-### Features
+## Features
 - Optimized to render fast in terminals.
 - Multi-platform (Linux, Windows and MacOS)
 - Multi-terminal (See [crossterm terminal support](https://github.com/crossterm-rs/crossterm#tested-terminals))

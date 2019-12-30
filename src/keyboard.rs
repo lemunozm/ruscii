@@ -69,20 +69,23 @@ impl Keyboard {
 
     pub fn consume_key_events(&mut self) -> &Vec<KeyEvent> {
         self.last_key_events.clear();
-        for event in self.event_receiver.try_iter() {
-            match event {
-                KeyEvent::Pressed(key) => {
-                    if !self.state.contains(&key) {
-                        self.state.insert(key);
-                        self.last_key_events.push(event);
-                    }
-                },
-                KeyEvent::Released(key) => {
-                    if self.state.contains(&key) {
-                        self.state.remove(&key);
-                        self.last_key_events.push(event);
-                    }
-                },
+        let events = self.event_receiver.try_iter().collect::<Vec<_>>();
+
+        for event in &events {
+            if let KeyEvent::Pressed(key) = *event {
+                if !self.state.contains(&key) {
+                    self.state.insert(key);
+                    self.last_key_events.push(*event);
+                }
+            }
+        }
+
+        for event in &events {
+            if let KeyEvent::Released(key) = *event {
+                if self.state.contains(&key) {
+                    self.state.remove(&key);
+                    self.last_key_events.push(*event);
+                }
             }
         }
         &self.last_key_events
