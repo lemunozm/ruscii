@@ -32,8 +32,9 @@ cargo run --example <example_name> --release
 
 ### Some of these examples:
 #### Space invaders ([200 lines](examples/space_invaders.rs)):
-  ![](images/space_invaders.png)
+  [![asciicast](https://asciinema.org/a/291004.svg)](https://asciinema.org/a/291004)
 
 #### Pong ([150 lines](examples/pong.rs)):
-  ![](images/pong.png)
+  [![asciicast](https://asciinema.org/a/291007.svg)](https://asciinema.org/a/291007)
 
+Note: the first `asciimedia` playback could be shown laggy, a second playback fix this issue.
