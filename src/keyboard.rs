@@ -2,7 +2,7 @@ use std::sync::mpsc::{self, Sender, Receiver};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc};
 use std::thread::{self, JoinHandle};
-use std::collections::{HashSet};
+use std::collections::{HashMap};
 use std::time;
 
 use crossterm as ct;
@@ -30,8 +30,9 @@ pub struct Keyboard {
     device_thread: Option<JoinHandle<()>>,
     event_receiver: Receiver<KeyEvent>,
     threads_running: Arc<AtomicBool>,
-    state: HashSet<Key>,
+    state: HashMap<Key, usize>,
     last_key_events: Vec<KeyEvent>,
+    last_key_stamp: usize,
 }
 
 impl Keyboard {
@@ -62,8 +63,9 @@ impl Keyboard {
             device_thread: Some(device_thread),
             event_receiver: receiver,
             threads_running,
-            state: HashSet::new(),
+            state: HashMap::new(),
             last_key_events: Vec::new(),
+            last_key_stamp: 0,
         }
     }
 
@@ -73,16 +75,17 @@ impl Keyboard {
 
         for event in &events {
             if let KeyEvent::Pressed(key) = *event {
-                if !self.state.contains(&key) {
-                    self.state.insert(key);
+                if !self.state.contains_key(&key) {
+                    self.state.insert(key, self.last_key_stamp);
                     self.last_key_events.push(*event);
+                    self.last_key_stamp += 1;
                 }
             }
         }
 
         for event in &events {
             if let KeyEvent::Released(key) = *event {
-                if self.state.contains(&key) {
+                if self.state.contains_key(&key) {
                     self.state.remove(&key);
                     self.last_key_events.push(*event);
                 }
@@ -95,8 +98,10 @@ impl Keyboard {
         &self.last_key_events
     }
 
-    pub fn get_keys_down(&self) -> &HashSet<Key> {
-        &self.state
+    pub fn get_keys_down(&self) -> Vec<Key> {
+        let mut keys = self.state.iter().collect::<Vec<_>>();
+        keys.sort_by(|a, b| a.1.cmp(b.1));
+        keys.into_iter().map(|x| *x.0).collect()
     }
 
     fn process_input_event(sender: &Sender<KeyEvent>) {

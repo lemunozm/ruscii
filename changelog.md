@@ -1,4 +1,8 @@
 # Changelog
+## Current
+### Added
+- `get_keys_down` method from `keyboard` now gives an ordered time event list of keys.
+
 ## v0.1.2
 ### Fixed
 - Issue with key events. Sometimes the key release event was not computed.
