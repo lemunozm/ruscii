@@ -44,7 +44,7 @@ Note: the first `asciimedia` playback could be shown laggy, a second playback fi
 ### Test it in your own terminal!
 Add the following line to your dependencies section in `Cargo.toml` file:
 ```
-ruscii = "0.1"
+ruscii = "0.2"
 ```
 
 Copy the following code in your `main.rs` to run the base `ruscii` application:
