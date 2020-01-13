@@ -1,7 +1,13 @@
 # Changelog
-## Current
+## v0.2.0
 ### Added
 - `get_keys_down` method from `keyboard` now gives an ordered time event list of keys.
+- `Drawable` trait for custom painting.
+- The pencil can now be scaled.
+- Defatul fps to 30 (most terminals render to 30 fps)
+
+### Changes
+- Disable Styles, some terminals show graphics due by the Styles. (This will be fixed in a near future)
 
 ## v0.1.2
 ### Fixed

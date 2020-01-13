@@ -47,12 +47,14 @@ pub enum Style {
     Bold,
 }
 
+/*
 fn style_impl(style: Style) -> ct::style::Attribute {
     match style {
         Style::Plain => ct::style::Attribute::NoBold,
         Style::Bold => ct::style::Attribute::Bold,
     }
 }
+*/
 
 #[derive(Clone, Copy)]
 pub struct VisualElement {
@@ -210,14 +212,16 @@ impl Window {
         self.clean_state();
         let mut last_foreground = self.canvas.default_element().foreground;
         let mut last_background = self.canvas.default_element().background;
-        let mut last_style = self.canvas.default_element().style;
+        //let mut last_style = self.canvas.default_element().style;
 
         for element in self.canvas.data().iter() {
+            /*
             if last_style != element.style {
                 let term_attribute = style_impl(element.style);
                 ct::queue!(self.target, ct::style::SetAttribute(term_attribute)).unwrap();
                 last_style = element.style
             }
+            */
             if last_foreground != element.foreground {
                 let term_color = ct::style::Color::AnsiValue(element.foreground.code());
                 ct::queue!(self.target, ct::style::SetForegroundColor(term_color)).unwrap();
@@ -235,7 +239,7 @@ impl Window {
     }
 
     fn clean_state(&mut self) {
-        ct::queue!(self.target, ct::style::SetAttribute(ct::style::Attribute::NoBold)).unwrap();
+        //ct::queue!(self.target, ct::style::SetAttribute(ct::style::Attribute::NoBold)).unwrap();
 
         let term_foreground = ct::style::Color::AnsiValue(self.canvas.default_element().foreground.code());
         ct::queue!(self.target, ct::style::SetForegroundColor(term_foreground)).unwrap();
