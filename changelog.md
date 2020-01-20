@@ -1,4 +1,9 @@
 # Changelog
+## Current
+### Removed
+- Scaled pencils. Rationale:
+  The management is very little intuitive, when the position is scaled and when not.
+  The user should control this behaviour.
 ## v0.2.0
 ### Added
 - `get_keys_down` method from `keyboard` now gives an ordered time event list of keys.
