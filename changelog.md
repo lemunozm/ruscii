@@ -2,6 +2,13 @@
 
 ## Current
 
+### Added
+- Added Debug trait to Color and Style
+
+### Fixed
+- Improved speed.
+- Fixed some blink in the top-left corner produced when a key was pressed.
+
 ### Removed
 - Scaled pencils. Rationale:
   The management is very little intuitive by the user:
@@ -9,20 +16,17 @@
   ¿How this should be represented in characters?.
   The user should control this behaviour.
 
-### Fixed
-- Improved speed.
-- Fixed some blink produced when a key was pressed in the top-left corner.
-
 ## v0.2.0
 
 ### Added
 - `get_keys_down` method from `keyboard` now gives an ordered time event list of keys.
 - `Drawable` trait for custom painting.
 - The pencil can now be scaled.
-- Defatul fps to 30 (most terminals render to 30 fps)
+- Default fps to 30 (most terminals render to 30 fps)
 
 ### Changes
-- Disable Styles, some terminals show graphics due by the Styles. (This will be fixed in a near future)
+- Disable Styles, some terminals show issues by the way the styles are computed.
+  (This will be fixed in a near future)
 
 ## v0.1.2
 

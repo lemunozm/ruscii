@@ -6,7 +6,7 @@ use super::spatial::Vec2;
 // ================================================================================
 // VISUAL ELEMENT
 // ================================================================================
-#[derive(Clone, Copy, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum Color {
     Black,
     White,
@@ -41,7 +41,7 @@ impl Color {
     }
 }
 
-#[derive(Clone, Copy, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum Style {
     Plain,
     Bold,

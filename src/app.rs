@@ -105,7 +105,6 @@ impl App {
                 self.window.clear();
 
                 self.state.keyboard.consume_key_events();
-
                 frame_action(&mut self.state, &mut self.window);
 
                 self.window.draw();
