@@ -81,8 +81,8 @@ fn main() {
 ### Debugging
 Debug a terminal app is usually difficult because the app output and the backtrace goes to the same terminal view.
 Ruscii uses the _standard output_ to render data and the _standard error_ to log error information.
-We recommend to redirect the _standard error_ to a file, and the inspect the file.
-The app behavior is the same.
+We recommend to redirect the _standard error_ to a file that can be inspected later.
+
 For example, in `bash` it will be:
 ```
 $ export RUST_BACKTRACE=1
