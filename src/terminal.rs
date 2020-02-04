@@ -213,7 +213,8 @@ impl Window {
         let mut last_foreground = self.canvas.default_element().foreground;
         let mut last_background = self.canvas.default_element().background;
         //let mut last_style = self.canvas.default_element().style;
-
+        let target = &mut self.target;
+        
         for element in self.canvas.data().iter() {
             /*
             if last_style != element.style {
@@ -224,15 +225,15 @@ impl Window {
             */
             if last_foreground != element.foreground {
                 let term_color = ct::style::Color::AnsiValue(element.foreground.code());
-                ct::queue!(self.target, ct::style::SetForegroundColor(term_color)).unwrap();
+                ct::queue!(target, ct::style::SetForegroundColor(term_color)).unwrap();
                 last_foreground = element.foreground
             }
             if last_background != element.background {
                 let term_color = ct::style::Color::AnsiValue(element.background.code());
-                ct::queue!(self.target, ct::style::SetBackgroundColor(term_color)).unwrap();
+                ct::queue!(target, ct::style::SetBackgroundColor(term_color)).unwrap();
                 last_background = element.background
             }
-            ct::queue!(self.target, ct::style::Print(element.value)).unwrap();
+            ct::queue!(target, ct::style::Print(element.value)).unwrap();
         }
         self.clean_state();
         self.target.flush().unwrap();
