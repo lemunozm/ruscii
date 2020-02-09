@@ -60,7 +60,7 @@ fn main() {
             .draw_text("Press 'Q' or 'Esc' for exit", Vec2::y(2))
             .set_origin(size / 4)
             .set_foreground(Color::Grey)
-            .draw_rect(&RectCharset::double_lines(), Vec2::new(), state.map_dim)
+            .draw_rect(&RectCharset::double_lines(), Vec2::zero(), state.map_dim)
             .set_foreground(Color::Yellow)
             .draw_char('A', state.player_pos);
     });

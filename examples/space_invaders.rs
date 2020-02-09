@@ -172,7 +172,7 @@ fn main() {
             let status_msg = if state.lives > 0 {"You win! :D"} else {"You lose :("};
             let msg = &format!("{}  -  score: {}", status_msg, state.score);
             pencil.set_origin(win_size / 2 - Vec2::x(msg.len() / 2));
-            pencil.draw_text(msg, Vec2::new());
+            pencil.draw_text(msg, Vec2::zero());
             return ();
         }
 

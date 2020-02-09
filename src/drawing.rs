@@ -64,7 +64,7 @@ pub struct Pencil<'a> {
 impl<'a> Pencil<'a> {
     pub fn new(canvas: &'a mut Canvas) -> Pencil {
         Pencil {
-            origin: Vec2::new(),
+            origin: Vec2::zero(),
             foreground: canvas.default_element().foreground,
             background: canvas.default_element().background,
             style: canvas.default_element().style,
@@ -183,10 +183,14 @@ impl<'a> Pencil<'a> {
             .move_origin(-position)
     }
 
-    pub fn draw<D: Drawable>(&mut self, drawable: &D, position: Vec2) -> &mut Pencil<'a> {
+    pub fn draw_at<D: Drawable>(&mut self, drawable: &D, position: Vec2) -> &mut Pencil<'a> {
         let mut new_pencil = self.new_one();
         new_pencil.move_origin(position);
         drawable.draw(new_pencil);
         self
+    }
+
+    pub fn draw<D: Drawable>(&mut self, drawable: &D) -> &mut Pencil<'a> {
+        self.draw_at(drawable, Vec2::zero())
     }
 }

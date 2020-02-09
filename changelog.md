@@ -3,11 +3,15 @@
 ## Current
 
 ### Added
-- Added Debug trait to Color and Style
+- Added `Debug` trait to `Color` and `Style`
+- Added `draw_at` and `draw` versions for `Drawable` elements.
 
 ### Fixed
 - Improved speed.
 - Fixed some blink in the top-left corner produced when a key was pressed.
+
+### Changed
+- Modified `new` function of Vec2 by `zero` with more meaning.
 
 ### Removed
 - Scaled pencils. Rationale:
