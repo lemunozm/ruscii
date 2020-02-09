@@ -11,12 +11,19 @@ Any contribution, issue, or pull request would be welcome!
 ## Features
 - Optimized to render fast in terminals.
 - Multi-platform (Linux, Windows and MacOS)
-  - For linux, it is required to have a x11 server (most of distribution comes with it). Internally `ruscii` use it to create transparent key pressed and released events.
+  - For linux, it is required to have a x11 server (most of distribution comes with it).
+    Internally `ruscii` use it to create transparent key pressed and released events.
 - Multi-terminal (See [crossterm terminal support](https://github.com/crossterm-rs/crossterm#tested-terminals))
 - Enable **key press** and **release** events in terminal (essential for games!).
 - Easy to use. Make your terminal game in a few lines!
 - Easy way to recover the terminal state at error.
 
+## Dependencies
+- In linux, you have to install the X11 development libraries.
+  For example, in ubuntu you can get it as follows:
+    ```
+    sudo apt install libx11-dev
+    ```
 ## Examples
 You can found several examples into the [example folder](examples).
 
