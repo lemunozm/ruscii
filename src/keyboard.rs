@@ -13,6 +13,7 @@ use dq::DeviceQuery;
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum Key {
     Esc, Space, Enter,
+    Up, Down, Left, Right,
     A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
     Num0, Num1, Num2, Num3, Num4, Num5, Num6, Num7, Num8, Num9,
     F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12,
@@ -23,6 +24,16 @@ pub enum Key {
 pub enum KeyEvent {
     Pressed(Key),
     Released(Key),
+}
+
+impl KeyEvent {
+    pub fn pressed(self) -> Option<Key> {
+       if let KeyEvent::Pressed(key) = self { Some(key) } else { None }
+    }
+
+    pub fn released(self) -> Option<Key> {
+       if let KeyEvent::Released(key) = self { Some(key) } else { None }
+    }
 }
 
 pub struct Keyboard {
@@ -133,6 +144,10 @@ impl Keyboard {
         match input_key {
             ct::event::KeyCode::Enter => Key::Enter,
             ct::event::KeyCode::Esc => Key::Esc,
+            ct::event::KeyCode::Up => Key::Up,
+            ct::event::KeyCode::Down => Key::Down,
+            ct::event::KeyCode::Left => Key::Left,
+            ct::event::KeyCode::Right => Key::Right,
             ct::event::KeyCode::Char(c) => match c {
                 ' ' => Key::Space,
                 'a' => Key::A,
@@ -175,17 +190,17 @@ impl Keyboard {
             },
             ct::event::KeyCode::F(n) => match n {
                 1 => Key::F1,
-                2 => Key::F1,
-                3 => Key::F1,
-                4 => Key::F1,
-                5 => Key::F1,
-                6 => Key::F1,
-                7 => Key::F1,
-                8 => Key::F1,
-                9 => Key::F1,
-                10 => Key::F1,
-                11 => Key::F1,
-                12 => Key::F1,
+                2 => Key::F2,
+                3 => Key::F3,
+                4 => Key::F4,
+                5 => Key::F5,
+                6 => Key::F6,
+                7 => Key::F7,
+                8 => Key::F8,
+                9 => Key::F9,
+                10 => Key::F10,
+                11 => Key::F11,
+                12 => Key::F12,
                 _ => unreachable!()
             },
             _ => Key::Unknown,
@@ -195,8 +210,12 @@ impl Keyboard {
     fn transform_device_key(device_key: &dq::Keycode) -> Key {
         match device_key {
             dq::Keycode::Escape => Key::Esc,
-            dq::Keycode::Space => Key::Space,
             dq::Keycode::Enter => Key::Enter,
+            dq::Keycode::Up => Key::Up,
+            dq::Keycode::Down => Key::Down,
+            dq::Keycode::Left => Key::Left,
+            dq::Keycode::Right => Key::Right,
+            dq::Keycode::Space => Key::Space,
             dq::Keycode::A => Key::A,
             dq::Keycode::B => Key::B,
             dq::Keycode::C => Key::C,

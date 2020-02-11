@@ -1,4 +1,8 @@
-## Version 0.3.0
+## Current 0.3.1
+- Improvement key support with arrow keys.
+- Fixed issue with F keys.
+
+## Release 0.3.0
 - Added `Debug` trait to `Color` and `Style`
 - Added `draw_at` and `draw` versions for `Drawable` elements.
 - Improved speed.
@@ -10,7 +14,7 @@
   How this should be represented in characters?.
   The user should control this behaviour.
 
-## Version 0.2.0
+## Release 0.2.0
 - Added `get_keys_down` method from `keyboard` now gives an ordered time event list of keys.
 - Added `Drawable` trait for custom painting.
 - Added scale option to pencils.
@@ -18,11 +22,11 @@
 - Disable Styles, some terminals show issues by the way the styles are computed.
   (This will be fixed in a near future)
 
-## Version 0.1.2
+## Release 0.1.2
 - Fixed issue with key events. Sometimes the key release event was not computed.
 
-## Version 0.1.1
+## Release 0.1.1
 - Added MacOS support
 
-## Version 0.1.0
+## Release 0.1.0
 - First release
