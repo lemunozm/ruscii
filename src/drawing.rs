@@ -154,6 +154,11 @@ impl<'a> Pencil<'a> {
         self
     }
 
+    pub fn draw_center_text(&mut self, text: &str, position: Vec2) -> &mut Pencil<'a> {
+        let position = position - Vec2::x(text.len() as i32 / 2);
+        self.draw_text(text, position)
+    }
+
     pub fn draw_vline<T: ToPrimitive>(&mut self, value: char, position: Vec2, size: T) -> &mut Pencil<'a> {
         let elem_pos = self.origin + position;
         for i in 0..size.to_usize().unwrap() as usize {
