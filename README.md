@@ -19,11 +19,17 @@ Any contribution, issue, or pull request would be welcome!
 - Easy way to recover the terminal state at error.
 
 ## Dependencies
-- To compile `ruscii` in linux, you have to install the X11 development libraries.
-  For example, in Ubuntu you can get it as follows:
+To compile `ruscii` in linux, you have to install the X11 development libraries.
+  - In Ubuntu/Debian:
     ```
     sudo apt install libx11-dev
     ```
+  - In Fedora/RHEL/CentOS:
+    ```
+    sudo dnf install xorg-x11-server-devel
+    ```
+Windows and MacOS do not need any special dependency.
+
 ## Examples
 You can found several examples into the [example folder](examples).
 
