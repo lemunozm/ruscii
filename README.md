@@ -6,7 +6,7 @@
 An easy library to make terminal applications and games in *rust*.
 
 The aim of this project is to make easier the game development in terminals.
-Any contribution, issue, or pull request would be welcome!
+**Any contribution**, issue, or pull request would be welcome!
 
 ## Features
 - Optimized to render fast in terminals.
@@ -19,7 +19,7 @@ Any contribution, issue, or pull request would be welcome!
 - Easy way to recover the terminal state at error.
 
 ## Dependencies
-To compile `ruscii` in linux, you have to install the X11 development libraries.
+To compile `ruscii` in linux, you need to have installed the X11 development libraries.
   - In Ubuntu/Debian:
     ```
     sudo apt install libx11-dev

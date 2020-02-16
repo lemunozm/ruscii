@@ -3,22 +3,37 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc};
 use std::thread::{self, JoinHandle};
 use std::collections::{HashMap};
-use std::time;
+use std::time::{Instant, Duration};
 
 use crossterm as ct;
 use device_query as dq;
 use dq::DeviceQuery;
 
+const KEY_EVENT_FOCUS_DELAY_MS: u64 = 20;
+
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum Key {
-    Esc, Space, Enter,
+    Esc, Space, Enter, Backspace, CapsLock, Tab,
     Up, Down, Left, Right,
+    Home, End, PageUp, PageDown, Insert, Delete,
     A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
     Num0, Num1, Num2, Num3, Num4, Num5, Num6, Num7, Num8, Num9,
     F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12,
+
+    // The following keys names represent the position of the key in a US keyboard, can vary in others keyboards.
+    // Some keys may generate only one event by two key press depending the keyboard distribution.
+    Grave, Minus, Equal, LeftBracket, RightBracket, BackSlash, Semicolon, Apostrophe, Comma, Dot, Slash,
+
     Unknown,
 }
+
+/* TODO: Add modifiers to events.
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+pub enum Modifier {
+    LControl, RControl, LShift, RShift, LAlt, RAlt, Meta,
+}
+*/
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum KeyEvent {
@@ -37,10 +52,10 @@ impl KeyEvent {
 }
 
 pub struct Keyboard {
-    stdin_thread: Option<JoinHandle<()>>,
-    device_thread: Option<JoinHandle<()>>,
+    thread_running: Arc<AtomicBool>,
+    acc_thread: Option<JoinHandle<()>>,
+    event_thread: Option<JoinHandle<()>>,
     event_receiver: Receiver<KeyEvent>,
-    threads_running: Arc<AtomicBool>,
     state: HashMap<Key, usize>,
     last_key_events: Vec<KeyEvent>,
     last_key_stamp: usize,
@@ -48,36 +63,84 @@ pub struct Keyboard {
 
 impl Keyboard {
     pub fn new() -> Keyboard {
-        let threads_running = Arc::new(AtomicBool::new(true));
-        let (sender, receiver): (Sender<KeyEvent>, Receiver<KeyEvent>) = mpsc::channel();
+        let thread_running = Arc::new(AtomicBool::new(true));
 
-        let stdin_sender = sender.clone();
-        let stdin_running = threads_running.clone();
-        let stdin_thread = thread::spawn(move || {
-            while stdin_running.load(Ordering::SeqCst) {
-                Self::process_input_event(&stdin_sender);
+        let (acc_sender, acc_receiver): (Sender<KeyEvent>, Receiver<KeyEvent>) = mpsc::channel();
+        let (event_sender, event_receiver): (Sender<KeyEvent>, Receiver<KeyEvent>) = mpsc::channel();
+
+        let acc_thread_running = thread_running.clone();
+        let pressed_event_sender = event_sender.clone();
+        let acc_thread = thread::spawn(move || {
+            let mut event_accumulator: Vec<(KeyEvent, Instant)> = vec![];
+            let mut last_input_timestamp = Instant::now() - Duration::from_millis(KEY_EVENT_FOCUS_DELAY_MS + 1);
+            while acc_thread_running.load(Ordering::SeqCst) {
+                if let Some(timestamp) = Self::process_input_timestamp() {
+                    last_input_timestamp = timestamp;
+                }
+
+                event_accumulator.retain(|(key_event, instant)| {
+                    if Instant::now() - *instant > Duration::from_millis(KEY_EVENT_FOCUS_DELAY_MS) {
+                        return false;
+                    }
+
+                    if let Some(duration) = instant.checked_duration_since(last_input_timestamp) {
+                        if duration <= Duration::from_millis(KEY_EVENT_FOCUS_DELAY_MS) {
+                            pressed_event_sender.send(*key_event).unwrap();
+                            return false;
+                        }
+                    }
+
+                    if let Some(duration) = last_input_timestamp.checked_duration_since(*instant) {
+                        if duration <= Duration::from_millis(KEY_EVENT_FOCUS_DELAY_MS) {
+                            pressed_event_sender.send(*key_event).unwrap();
+                            return false;
+                        }
+                    }
+
+                    true
+                });
+
+                match acc_receiver.recv_timeout(Duration::from_millis(1)) {
+                    Ok(key_event) => event_accumulator.push((key_event, Instant::now())),
+                    Err(mpsc::RecvTimeoutError::Timeout) => (),
+                    Err(_) => (), //it is reached maybe because of rust issue #39364
+                };
             }
         });
 
-        let device_sender = sender.clone();
-        let device_running = threads_running.clone();
-        let device_thread = thread::spawn(move || {
+        let event_thread_running = thread_running.clone();
+        let released_event_sender = event_sender.clone();
+        let event_thread = thread::spawn(move || {
             let device = dq::DeviceState::new();
             let mut last_device_state = Vec::new();
-            while device_running.load(Ordering::SeqCst) {
-                Self::process_device_event(&device_sender, &device, &mut last_device_state);
+            while event_thread_running.load(Ordering::SeqCst) {
+                thread::sleep(Duration::from_millis(1));
+                let new_device_state = device.get_keys();
+                Self::process_pressed_event(&acc_sender, &new_device_state, &last_device_state);
+                Self::process_released_event(&released_event_sender, &new_device_state, &last_device_state);
+                std::mem::replace(&mut last_device_state, new_device_state);
             }
         });
 
         Keyboard {
-            stdin_thread: Some(stdin_thread),
-            device_thread: Some(device_thread),
-            event_receiver: receiver,
-            threads_running,
+            thread_running,
+            event_thread: Some(event_thread),
+            acc_thread: Some(acc_thread),
+            event_receiver,
             state: HashMap::new(),
             last_key_events: Vec::new(),
             last_key_stamp: 0,
         }
+    }
+
+    pub fn last_key_events(&self) -> &Vec<KeyEvent> {
+        &self.last_key_events
+    }
+
+    pub fn get_keys_down(&self) -> Vec<Key> {
+        let mut keys = self.state.iter().collect::<Vec<_>>();
+        keys.sort_by(|key_stamp_a, key_stamp_b| key_stamp_a.1.cmp(key_stamp_b.1));
+        keys.into_iter().map(|x| *x.0).collect()
     }
 
     pub fn consume_key_events(&mut self) -> &Vec<KeyEvent> {
@@ -105,105 +168,33 @@ impl Keyboard {
         &self.last_key_events
     }
 
-    pub fn last_key_events(&self) -> &Vec<KeyEvent> {
-        &self.last_key_events
+    fn process_input_timestamp() -> Option<Instant> {
+        let mut input_received = false;
+        while ct::event::poll(Duration::from_millis(0)).unwrap() { //means: has the app the focus?
+            ct::event::read().unwrap();
+            input_received = true;
+        }
+
+        if input_received { Some(Instant::now()) } else { None }
     }
 
-    pub fn get_keys_down(&self) -> Vec<Key> {
-        let mut keys = self.state.iter().collect::<Vec<_>>();
-        keys.sort_by(|a, b| a.1.cmp(b.1));
-        keys.into_iter().map(|x| *x.0).collect()
-    }
-
-    fn process_input_event(sender: &Sender<KeyEvent>) {
-        if ct::event::poll(time::Duration::from_millis(1)).unwrap() {
-            let event = ct::event::read().unwrap();
-            if let ct::event::Event::Key(key_event) = event {
-                let key = Self::transform_input_key(&key_event.code);
-                if key != Key::Unknown {
-                    sender.send(KeyEvent::Pressed(key)).unwrap();
-                }
+    fn process_pressed_event(sender: &Sender<KeyEvent>, new_state: &Vec<dq::Keycode>, last_state: &Vec<dq::Keycode>) {
+        let pressed: Vec<dq::Keycode> = new_state.clone().into_iter().filter(|x| !last_state.contains(x)).collect();
+        for keycode in pressed {
+            let key = Self::transform_device_key(&keycode);
+            if key != Key::Unknown {
+                sender.send(KeyEvent::Pressed(key)).unwrap();
             }
         }
     }
 
-    fn process_device_event(sender: &Sender<KeyEvent>, device: &dq::DeviceState, last_device_state: &mut Vec<dq::Keycode>) {
-        let new_state = device.get_keys();
-        let released: Vec<dq::Keycode> = last_device_state.clone().into_iter().filter(|x| !new_state.contains(x)).collect();
-        std::mem::replace(last_device_state, new_state);
+    fn process_released_event(sender: &Sender<KeyEvent>, new_state: &Vec<dq::Keycode>, last_state: &Vec<dq::Keycode>) {
+        let released: Vec<dq::Keycode> = last_state.clone().into_iter().filter(|x| !new_state.contains(x)).collect();
         for keycode in released {
             let key = Self::transform_device_key(&keycode);
             if key != Key::Unknown {
                 sender.send(KeyEvent::Released(key)).unwrap();
             }
-        }
-        thread::sleep(time::Duration::from_millis(1));
-    }
-
-    fn transform_input_key(input_key: &ct::event::KeyCode) -> Key {
-        match input_key {
-            ct::event::KeyCode::Enter => Key::Enter,
-            ct::event::KeyCode::Esc => Key::Esc,
-            ct::event::KeyCode::Up => Key::Up,
-            ct::event::KeyCode::Down => Key::Down,
-            ct::event::KeyCode::Left => Key::Left,
-            ct::event::KeyCode::Right => Key::Right,
-            ct::event::KeyCode::Char(c) => match c {
-                ' ' => Key::Space,
-                'a' => Key::A,
-                'b' => Key::B,
-                'c' => Key::C,
-                'd' => Key::D,
-                'e' => Key::E,
-                'f' => Key::F,
-                'g' => Key::G,
-                'h' => Key::H,
-                'i' => Key::I,
-                'j' => Key::J,
-                'k' => Key::K,
-                'l' => Key::L,
-                'm' => Key::M,
-                'n' => Key::N,
-                'o' => Key::O,
-                'p' => Key::P,
-                'q' => Key::Q,
-                'r' => Key::R,
-                's' => Key::S,
-                't' => Key::T,
-                'u' => Key::U,
-                'v' => Key::V,
-                'w' => Key::W,
-                'x' => Key::X,
-                'y' => Key::Y,
-                'z' => Key::Z,
-                '0' => Key::Num0,
-                '1' => Key::Num1,
-                '2' => Key::Num2,
-                '3' => Key::Num3,
-                '4' => Key::Num4,
-                '5' => Key::Num5,
-                '6' => Key::Num6,
-                '7' => Key::Num7,
-                '8' => Key::Num8,
-                '9' => Key::Num9,
-                _ => Key::Unknown
-            },
-            ct::event::KeyCode::F(n) => match n {
-                1 => Key::F1,
-                2 => Key::F2,
-                3 => Key::F3,
-                4 => Key::F4,
-                5 => Key::F5,
-                6 => Key::F6,
-                7 => Key::F7,
-                8 => Key::F8,
-                9 => Key::F9,
-                10 => Key::F10,
-                11 => Key::F11,
-                12 => Key::F12,
-                _ => unreachable!()
-            },
-            _ => Key::Unknown,
         }
     }
 
@@ -211,11 +202,23 @@ impl Keyboard {
         match device_key {
             dq::Keycode::Escape => Key::Esc,
             dq::Keycode::Enter => Key::Enter,
+            dq::Keycode::Space => Key::Space,
+
             dq::Keycode::Up => Key::Up,
             dq::Keycode::Down => Key::Down,
             dq::Keycode::Left => Key::Left,
             dq::Keycode::Right => Key::Right,
-            dq::Keycode::Space => Key::Space,
+
+            dq::Keycode::Backspace => Key::Backspace,
+            dq::Keycode::CapsLock => Key::CapsLock,
+            dq::Keycode::Tab => Key::Tab,
+            dq::Keycode::Home => Key::Home,
+            dq::Keycode::End => Key::End,
+            dq::Keycode::PageUp => Key::PageUp,
+            dq::Keycode::PageDown => Key::PageDown,
+            dq::Keycode::Insert => Key::Insert,
+            dq::Keycode::Delete => Key::Delete,
+
             dq::Keycode::A => Key::A,
             dq::Keycode::B => Key::B,
             dq::Keycode::C => Key::C,
@@ -242,6 +245,7 @@ impl Keyboard {
             dq::Keycode::X => Key::X,
             dq::Keycode::Y => Key::Y,
             dq::Keycode::Z => Key::Z,
+
             dq::Keycode::Key0 => Key::Num0,
             dq::Keycode::Key1 => Key::Num1,
             dq::Keycode::Key2 => Key::Num2,
@@ -252,6 +256,7 @@ impl Keyboard {
             dq::Keycode::Key7 => Key::Num7,
             dq::Keycode::Key8 => Key::Num8,
             dq::Keycode::Key9 => Key::Num9,
+
             dq::Keycode::F1 => Key::F1,
             dq::Keycode::F2 => Key::F2,
             dq::Keycode::F3 => Key::F3,
@@ -264,6 +269,19 @@ impl Keyboard {
             dq::Keycode::F10 => Key::F10,
             dq::Keycode::F11 => Key::F11,
             dq::Keycode::F12 => Key::F12,
+
+            dq::Keycode::Grave => Key::Grave,
+            dq::Keycode::Minus => Key::Minus,
+            dq::Keycode::Equal => Key::Equal,
+            dq::Keycode::LeftBracket => Key::LeftBracket,
+            dq::Keycode::RightBracket => Key::RightBracket,
+            dq::Keycode::BackSlash => Key::BackSlash,
+            dq::Keycode::Semicolon => Key::Semicolon,
+            dq::Keycode::Apostrophe => Key::Apostrophe,
+            dq::Keycode::Comma => Key::Comma,
+            dq::Keycode::Dot => Key::Dot,
+            dq::Keycode::Slash => Key::Slash,
+
             _ => Key::Unknown,
         }
     }
@@ -271,8 +289,8 @@ impl Keyboard {
 
 impl Drop for Keyboard {
     fn drop(&mut self) {
-        self.threads_running.store(false, Ordering::SeqCst);
-        self.device_thread.take().unwrap().join().unwrap();
-        self.stdin_thread.take().unwrap().join().unwrap();
+        self.thread_running.store(false, Ordering::SeqCst);
+        self.acc_thread.take().unwrap().join().unwrap();
+        self.event_thread.take().unwrap().join().unwrap();
     }
 }

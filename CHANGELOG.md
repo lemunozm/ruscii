@@ -1,3 +1,6 @@
+## Current 0.3.2
+- Improvement key support.
+
 ## Current 0.3.1
 - Improvement key support with arrow keys.
 - Fixed issue with F keys.
