@@ -28,7 +28,7 @@ fn main() {
     let size = app.window().size();
     let mut fps_counter = FPSCounter::new();
     let mut state = GameState {
-        player_pos: size / 4,
+        player_pos: size / 2,
         player_move: Vec2::xy(1, 0),
         map_dim: size / 2,
     };

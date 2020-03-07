@@ -55,6 +55,7 @@ pub trait Drawable {
 
 pub struct Pencil<'a> {
     origin: Vec2,
+    scale: Vec2,
     foreground: Color,
     background: Color,
     style: Style,
@@ -65,6 +66,7 @@ impl<'a> Pencil<'a> {
     pub fn new(canvas: &'a mut Canvas) -> Pencil {
         Pencil {
             origin: Vec2::new(),
+            scale: Vec2::xy(1, 1),
             foreground: canvas.default_element().foreground,
             background: canvas.default_element().background,
             style: canvas.default_element().style,
@@ -75,6 +77,7 @@ impl<'a> Pencil<'a> {
     pub fn new_one(&mut self) -> Pencil {
         Pencil {
             origin: self.origin,
+            scale: self.scale,
             foreground: self.foreground,
             background: self.background,
             style: self.style,
@@ -82,8 +85,8 @@ impl<'a> Pencil<'a> {
         }
     }
 
-    fn draw_element(&mut self, pos: Vec2, value: char) {
-        match self.canvas.elem_mut(pos) {
+    fn draw_element(&mut self, position: Vec2, value: char) {
+        match self.canvas.elem_mut(position) {
             Some(element) => {
                 element.value = value;
                 element.foreground = self.foreground;
@@ -94,8 +97,16 @@ impl<'a> Pencil<'a> {
         };
     }
 
+    fn canvas_position(&self, position: Vec2) -> Vec2 {
+        self.origin + position * self.scale
+    }
+
     pub fn origin(&self) -> Vec2 {
         self.origin
+    }
+
+    pub fn scale(&self) -> Vec2 {
+        self.scale
     }
 
     pub fn dimension(&self) -> Vec2 {
@@ -114,13 +125,18 @@ impl<'a> Pencil<'a> {
         &self.style
     }
 
-    pub fn set_origin(&mut self, pos: Vec2) -> &mut Pencil<'a> {
-        self.origin = pos;
+    pub fn set_origin(&mut self, position: Vec2) -> &mut Pencil<'a> {
+        self.origin = position;
         self
     }
 
-    pub fn move_origin(&mut self, pos: Vec2) -> &mut Pencil<'a> {
-        self.origin += pos;
+    pub fn move_origin(&mut self, displacement: Vec2) -> &mut Pencil<'a> {
+        self.origin += displacement;
+        self
+    }
+
+    pub fn set_scale(&mut self, scale: Vec2) -> &mut Pencil<'a> {
+        self.scale = scale;
         self
     }
 
@@ -139,32 +155,32 @@ impl<'a> Pencil<'a> {
         self
     }
 
-    pub fn draw_char(&mut self, value: char, pos: Vec2) -> &mut Pencil<'a> {
-        self.draw_element(self.origin + pos, value);
+    pub fn draw_char(&mut self, value: char, position: Vec2) -> &mut Pencil<'a> {
+        self.draw_element(self.canvas_position(position), value);
         self
     }
 
-    pub fn draw_text(&mut self, text: &str, pos: Vec2) -> &mut Pencil<'a> {
+    pub fn draw_text(&mut self, text: &str, position: Vec2) -> &mut Pencil<'a> {
         let width = self.canvas.dimension().x;
         for (i, value) in text.chars().enumerate() {
-            let elem_pos = self.origin + pos + Vec2::x(i);
+            let elem_pos = self.canvas_position(position) + Vec2::x(i);
             let elem_pos = Vec2::xy(elem_pos.x % width, elem_pos.y + elem_pos.x / width);
             self.draw_element(elem_pos, value);
         }
         self
     }
 
-    pub fn draw_vline<T: ToPrimitive>(&mut self, value: char, from: Vec2, size: T) -> &mut Pencil<'a> {
-        let elem_pos = self.origin + from;
-        for i in 0..size.to_usize().unwrap() {
+    pub fn draw_vline<T: ToPrimitive>(&mut self, value: char, position: Vec2, size: T) -> &mut Pencil<'a> {
+        let elem_pos = self.canvas_position(position);
+        for i in 0..size.to_usize().unwrap() * self.scale.y as usize {
             self.draw_element(elem_pos + Vec2::y(i), value);
         }
         self
     }
 
-    pub fn draw_hline<T: ToPrimitive>(&mut self, value: char, from: Vec2, size: T) -> &mut Pencil<'a> {
-        let elem_pos = self.origin + from;
-        for i in 0..size.to_usize().unwrap() {
+    pub fn draw_hline<T: ToPrimitive>(&mut self, value: char, position: Vec2, size: T) -> &mut Pencil<'a> {
+        let elem_pos = self.canvas_position(position);
+        for i in 0..size.to_usize().unwrap() * self.scale.x as usize {
             self.draw_element(elem_pos + Vec2::x(i), value);
         }
         self
@@ -172,10 +188,10 @@ impl<'a> Pencil<'a> {
 
     pub fn draw_rect(&mut self, charset: &RectCharset, position: Vec2, dimension: Vec2) -> &mut Pencil<'a> {
         self.move_origin(position)
-            .draw_hline(charset.top, Vec2::x(1), dimension.x - 2)
-            .draw_hline(charset.bottom, Vec2::xy(1, dimension.y - 1), dimension.x - 2)
-            .draw_vline(charset.left, Vec2::y(1), dimension.y - 2)
-            .draw_vline(charset.right, Vec2::xy(dimension.x - 1, 1), dimension.y - 2)
+            .draw_hline(charset.top, Vec2::x(0), dimension.x - 1)
+            .draw_hline(charset.bottom, Vec2::xy(0, dimension.y - 1), dimension.x - 1)
+            .draw_vline(charset.left, Vec2::y(0), dimension.y - 1)
+            .draw_vline(charset.right, Vec2::xy(dimension.x - 1, 0), dimension.y - 1)
             .draw_char(charset.top_left, Vec2::xy(0, 0))
             .draw_char(charset.top_right, Vec2::x(dimension.x - 1))
             .draw_char(charset.bottom_left, Vec2::y(dimension.y - 1))
@@ -184,8 +200,9 @@ impl<'a> Pencil<'a> {
     }
 
     pub fn draw<D: Drawable>(&mut self, drawable: D, position: Vec2) -> &mut Pencil<'a> {
+        let pen_pos = self.canvas_position(position);
         let mut new_pencil = self.new_one();
-        new_pencil.move_origin(position);
+        new_pencil.move_origin(pen_pos);
         drawable.draw(new_pencil);
         self
     }
