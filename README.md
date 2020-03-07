@@ -38,3 +38,42 @@ cargo run --example <example_name> --release
   [![asciicast](https://asciinema.org/a/291007.svg)](https://asciinema.org/a/291007)
 
 Note: the first `asciimedia` playback could be shown laggy, a second playback fix this issue.
+
+## Getting started
+
+### Test it in your own terminal!
+Add the following line to your dependencies section in `Cargo.toml` file:
+```
+ruscii = "0.1"
+```
+
+Copy the following code in your `main.rs` to run the base `ruscii` application:
+```rust
+use ruscii::app::{App, State};
+use ruscii::terminal::{Window};
+use ruscii::drawing::{Pencil};
+use ruscii::keyboard::{KeyEvent, Key};
+use ruscii::spatial::{Vec2};
+use ruscii::gui::{FPSCounter};
+
+fn main() {
+    let mut fps_counter = FPSCounter::new();
+    let mut app = App::new();
+
+    app.run(|app_state: &mut State, window: &mut Window| {
+        for key_event in app_state.keyboard().last_key_events() {
+            match key_event {
+                KeyEvent::Pressed(Key::Esc) => app_state.stop(),
+                KeyEvent::Pressed(Key::Q) => app_state.stop(),
+                _ => (),
+            }
+        }
+
+        fps_counter.update();
+
+        let mut pencil = Pencil::new(window.canvas_mut());
+        pencil.draw_text(&format!("FPS: {}", fps_counter.count()), Vec2::xy(1, 1));
+    });
+}
+```
+
