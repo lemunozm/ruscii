@@ -199,10 +199,9 @@ impl<'a> Pencil<'a> {
             .move_origin(-position)
     }
 
-    pub fn draw<D: Drawable>(&mut self, drawable: D, position: Vec2) -> &mut Pencil<'a> {
-        let pen_pos = self.canvas_position(position);
+    pub fn draw<D: Drawable>(&mut self, drawable: &D, position: Vec2) -> &mut Pencil<'a> {
         let mut new_pencil = self.new_one();
-        new_pencil.move_origin(pen_pos);
+        new_pencil.move_origin(position);
         drawable.draw(new_pencil);
         self
     }
