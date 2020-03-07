@@ -13,7 +13,7 @@ pub struct Config {
 
 impl Config {
     pub fn new() -> Config {
-        Config {fps: 60}
+        Config {fps: 30}
     }
 
     pub fn fps(mut self, fps: u32) -> Config {

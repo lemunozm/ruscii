@@ -76,7 +76,7 @@ impl GameState {
 
         self.spaceship_shots.iter_mut().for_each(|shot| shot.y -= 1);
 
-        if self.last_aliens_shots + 10 < frame {
+        if self.last_aliens_shots + 5 < frame {
             self.last_aliens_shots = frame;
             for alien in &self.aliens {
                 let must_shot = rand::thread_rng().gen_range(0, 200) == 0;

@@ -121,7 +121,7 @@ fn main() {
         }
 
         fps_counter.update();
-        if app_state.step() % 3 == 0 {
+        if app_state.step() % 2 == 0 {
             state.update();
         }
 
