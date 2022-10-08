@@ -187,6 +187,13 @@ impl<'a> Pencil<'a> {
             .draw_char(charset.bottom_right, dimension - Vec2::xy(1, 1))
             .move_origin(-position)
     }
+    pub fn draw_filled_rect(&mut self, position: Vec2, dimension: Vec2) -> &mut Pencil<'a> {
+        self.move_origin(position);
+        for i in 0..dimension.x {
+            self.draw_vline(' ', Vec2::xy(position.x+i, position.y), dimension.y);
+        }
+        self.move_origin(-position)
+    }
 
     pub fn draw_at<D: Drawable>(&mut self, drawable: &D, position: Vec2) -> &mut Pencil<'a> {
         let mut new_pencil = self.new_one();
