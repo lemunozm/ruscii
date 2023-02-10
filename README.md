@@ -56,6 +56,7 @@ Note: the first `asciimedia` playback could be shown laggy, a second playback fi
 
 ### Projects using `ruscii`:
 - [thrust](https://github.com/matwoess/thrust): A simple space shooter game. Runs in the terminal using characters-based UI.
+- [terminal-tetris](https://github.com/joinemm/terminal-tetris): 🕹️ Tetris in the terminal written in Rust
 
 *If you have a project using `ruscii` and you want it to appear here. Open an issue!*
 
