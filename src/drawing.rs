@@ -72,16 +72,6 @@ impl<'a> Pencil<'a> {
         }
     }
 
-    pub fn new_one(&mut self) -> Pencil {
-        Pencil {
-            origin: self.origin,
-            foreground: self.foreground,
-            background: self.background,
-            style: self.style,
-            canvas: self.canvas,
-        }
-    }
-
     fn draw_element(&mut self, position: Vec2, value: char) {
         match self.canvas.elem_mut(position) {
             Some(element) => {
@@ -89,7 +79,7 @@ impl<'a> Pencil<'a> {
                 element.foreground = self.foreground;
                 element.background = self.background;
                 element.style = self.style;
-            },
+            }
             None => (),
         };
     }
@@ -187,10 +177,10 @@ impl<'a> Pencil<'a> {
             .draw_char(charset.bottom_right, dimension - Vec2::xy(1, 1))
             .move_origin(-position)
     }
-    pub fn draw_filled_rect(&mut self, fill: char,position: Vec2, dimension: Vec2) -> &mut Pencil<'a> {
+    pub fn draw_filled_rect(&mut self, fill: char, position: Vec2, dimension: Vec2) -> &mut Pencil<'a> {
         self.move_origin(position);
         for i in 0..dimension.x {
-            self.draw_vline(fill, Vec2::xy(position.x+i, position.y), dimension.y);
+            self.draw_vline(fill, Vec2::xy(position.x + i, position.y), dimension.y);
         }
         self.move_origin(-position)
     }
@@ -204,5 +194,17 @@ impl<'a> Pencil<'a> {
 
     pub fn draw<D: Drawable>(&mut self, drawable: &D) -> &mut Pencil<'a> {
         self.draw_at(drawable, Vec2::zero())
+    }
+}
+
+impl Clone for Pencil<'_> {
+    fn clone(&self) -> Self {
+        Pencil {
+            origin: self.origin,
+            foreground: self.foreground,
+            background: self.background,
+            style: self.style,
+            canvas: self.canvas,
+        }
     }
 }
