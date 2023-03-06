@@ -186,7 +186,7 @@ impl<'a> Pencil<'a> {
     }
 
     pub fn draw_at<D: Drawable>(&mut self, drawable: &D, position: Vec2) -> &mut Pencil<'a> {
-        let mut new_pencil = self.new_one();
+        let mut new_pencil = self.clone();
         new_pencil.move_origin(position);
         drawable.draw(new_pencil);
         self
