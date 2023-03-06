@@ -132,7 +132,7 @@ We recommend that you redirect the _standard error_ to a file to be inspected la
 
 To run your project with error logs saved to a file, run the following commands:
 
-```
+```sh
 export RUST_BACKTRACE=1
 cargo run 2> my_stderr
 ```
