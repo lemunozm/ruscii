@@ -173,16 +173,6 @@ impl<'a> Pencil<'a> {
         }
     }
 
-    pub fn new_one(&mut self) -> Pencil {
-        Pencil {
-            origin: self.origin,
-            foreground: self.foreground,
-            background: self.background,
-            style: self.style,
-            canvas: self.canvas,
-        }
-    }
-
     fn draw_element(&mut self, position: Vec2, value: char) {
         match self.canvas.elem_mut(position) {
             Some(element) => {
@@ -335,7 +325,7 @@ impl<'a> Pencil<'a> {
     ///
     /// Returns the receiver for chaining.
     pub fn draw_at<D: Drawable>(&mut self, drawable: &D, position: Vec2) -> &mut Pencil<'a> {
-        let mut new_pencil = self.new_one();
+        let mut new_pencil = self.clone();
         new_pencil.move_origin(position);
         drawable.draw(new_pencil);
         self
@@ -346,5 +336,17 @@ impl<'a> Pencil<'a> {
     /// Returns the receiver for chaining.
     pub fn draw<D: Drawable>(&mut self, drawable: &D) -> &mut Pencil<'a> {
         self.draw_at(drawable, Vec2::zero())
+    }
+}
+
+impl Clone for Pencil<'_> {
+    fn clone(&self) -> Self {
+        Pencil {
+            origin: self.origin,
+            foreground: self.foreground,
+            background: self.background,
+            style: self.style,
+            canvas: self.canvas,
+        }
     }
 }
