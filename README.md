@@ -57,7 +57,7 @@ cargo install ruscii --examples
 
 After it's installed, run it with:
 
-```
+```sh
 cargo run --example <example_name> --release
 ```
 
