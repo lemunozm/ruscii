@@ -74,7 +74,7 @@ impl From<&str> for RectCharset {
     ///
     /// # Panics
     ///
-    /// This function will `panic!` if the receiver is a `&str` of fewer than 8 characters.
+    /// This function will `panic!` if the given `item` is a `&str` of fewer than 8 characters.
     fn from(item: &str) -> Self {
         if item.len() < 8 {
             panic!("Build a RectCharset requires at least 8 characters.");
