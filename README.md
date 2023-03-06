@@ -50,7 +50,7 @@ You can find several examples of applications and games written using `ruscii` i
 
 To test one out, install `ruscii` with the examples flag using the following command.
 
-```
+```sh
 cargo install ruscii --examples
 ~/.cargo/bin/<example_name>
 ```
