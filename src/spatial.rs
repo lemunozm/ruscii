@@ -19,22 +19,22 @@ pub struct Vec2 {
 impl Vec2 {
     /// Constructs a [Vec2] representing (0, 0).
     pub fn zero() -> Vec2 {
-        Vec2 {x: 0, y: 0}
+        Vec2 { x: 0, y: 0 }
     }
 
     /// Constructs a [Vec2] with the given `x`- and `y`-coordinates.
     pub fn xy<T1: ToPrimitive, T2: ToPrimitive>(x: T1, y: T2) -> Vec2 {
-        Vec2 {x: x.to_i32().unwrap(), y: y.to_i32().unwrap()}
+        Vec2 { x: x.to_i32().unwrap(), y: y.to_i32().unwrap() }
     }
 
     /// Constructs a [Vec2] with the given `x`-coordinate and a `y`-coordinate of 0.
     pub fn x<T: ToPrimitive>(x: T) -> Vec2 {
-        Vec2 {x: x.to_i32().unwrap(), y: 0}
+        Vec2 { x: x.to_i32().unwrap(), y: 0 }
     }
 
     /// Constructs a [Vec2] with the given `y`-coordinate and an `x`-coordinate of 0.
     pub fn y<T: ToPrimitive>(y: T) -> Vec2 {
-        Vec2 {x: 0, y: y.to_i32().unwrap()}
+        Vec2 { x: 0, y: y.to_i32().unwrap() }
     }
 
     /// Sets the [Vec2] object to (0, 0).

@@ -11,7 +11,8 @@ const PAD_HEIGHT: i32 = 3;
 
 struct PlayerState {
     pub position: Vec2,
-    pub direction: i32, // -1, 0, 1
+    pub direction: i32,
+    // -1, 0, 1
     pub score: usize,
 }
 
@@ -27,8 +28,8 @@ impl GameState {
     pub fn new(dim: Vec2) -> Self {
         Self {
             dimension: dim,
-            left_player: PlayerState {position: Vec2::xy(1, dim.y / 2), direction: 0, score: 0},
-            right_player: PlayerState {position: Vec2::xy(dim.x - 3, dim.y / 2), direction: 0, score: 0},
+            left_player: PlayerState { position: Vec2::xy(1, dim.y / 2), direction: 0, score: 0 },
+            right_player: PlayerState { position: Vec2::xy(dim.x - 3, dim.y / 2), direction: 0, score: 0 },
             ball_position: dim / 2,
             ball_speed: Self::random_ball_direction(),
         }
@@ -45,12 +46,12 @@ impl GameState {
         self.ball_position += self.ball_speed;
 
         if self.left_player.position.y + PAD_HEIGHT < self.dimension.y && self.left_player.direction > 0
-        || self.left_player.position.y - PAD_HEIGHT > 0 && self.left_player.direction < 0 {
+            || self.left_player.position.y - PAD_HEIGHT > 0 && self.left_player.direction < 0 {
             self.left_player.position.y += self.left_player.direction;
         }
 
         if self.right_player.position.y + PAD_HEIGHT < self.dimension.y && self.right_player.direction > 0
-        || self.right_player.position.y - PAD_HEIGHT > 0 && self.right_player.direction < 0 {
+            || self.right_player.position.y - PAD_HEIGHT > 0 && self.right_player.direction < 0 {
             self.right_player.position.y += self.right_player.direction;
         }
 
@@ -65,15 +66,15 @@ impl GameState {
         }
 
         if self.ball_position.x <= self.left_player.position.x + 1
-        && self.ball_position.y <= self.left_player.position.y + PAD_HEIGHT
-        && self.ball_position.y >= self.left_player.position.y - PAD_HEIGHT {
+            && self.ball_position.y <= self.left_player.position.y + PAD_HEIGHT
+            && self.ball_position.y >= self.left_player.position.y - PAD_HEIGHT {
             self.ball_position.x = self.left_player.position.x + 1;
             self.ball_speed.x = -self.ball_speed.x;
         }
 
         if self.ball_position.x >= self.right_player.position.x
-        && self.ball_position.y <= self.right_player.position.y + PAD_HEIGHT
-        && self.ball_position.y >= self.right_player.position.y - PAD_HEIGHT {
+            && self.ball_position.y <= self.right_player.position.y + PAD_HEIGHT
+            && self.ball_position.y >= self.right_player.position.y - PAD_HEIGHT {
             self.ball_position.x = self.right_player.position.x;
             self.ball_speed.x = -self.ball_speed.x;
         }
@@ -84,7 +85,7 @@ impl GameState {
             self.ball_speed = Self::random_ball_direction();
         }
 
-        if self.ball_position.x >= self.dimension.x - 1{
+        if self.ball_position.x >= self.dimension.x - 1 {
             self.left_player.score += 1;
             self.ball_position = self.dimension / 2;
             self.ball_speed = Self::random_ball_direction();
@@ -140,7 +141,6 @@ fn main() {
             .draw_rect(&RectCharset::double_lines(), state.right_player.position - Vec2::y(PAD_HEIGHT), Vec2::xy(2, PAD_HEIGHT * 2))
             .set_foreground(Color::Yellow)
             .set_style(Style::Bold)
-            .draw_char('o', state.ball_position)
-            ;
+            .draw_char('o', state.ball_position);
     });
 }
