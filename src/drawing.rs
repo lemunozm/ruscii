@@ -1,8 +1,15 @@
+//! # Drawing
+//!
+//! The `drawing` module provides functionality for drawing shapes and text with multiple styles
+//! to the terminal screen.
+
 use super::terminal::{Canvas, Color, Style};
 use super::spatial::{Vec2};
 
 use num::cast::ToPrimitive;
 
+/// The set of all characters needed to draw all edges and corners of a variable-length rectangle
+/// in the terminal.
 #[derive(Debug, Clone)]
 pub struct RectCharset {
     pub top: char,
@@ -16,20 +23,58 @@ pub struct RectCharset {
 }
 
 impl RectCharset {
+    /// Returns a [RectCharset] for a single-line rectangle.
+    ///
+    /// # Rectangle
+    ///
+    /// Using this charset will provide a rectangle that looks like this:
+    ///
+    /// ```
+    /// ┌──────┐
+    /// │ruscii│
+    /// └──────┘
+    /// ```
     pub fn simple_lines() -> RectCharset {
         RectCharset::from("──││┌┐└┘")
     }
 
+    /// Returns a [RectCharset] for a single-line rounded-corner rectangle.
+    ///
+    /// # Rectangle
+    ///
+    /// Using this charset will provide a rectangle that looks like this:
+    ///
+    /// ```
+    /// ╭──────╮
+    /// │ruscii│
+    /// ╰──────╯
+    /// ```
     pub fn simple_round_lines() -> RectCharset {
         RectCharset::from("──││╭╮╰╯")
     }
 
+    /// Returns a [RectCharset] for a double-line rectangle.
+    ///
+    /// # Rectangle
+    ///
+    /// Using this charset will provide a rectangle that looks like this:
+    ///
+    /// ```
+    /// ╔══════╗
+    /// ║ruscii║
+    /// ╚══════╝
+    /// ```
     pub fn double_lines() -> RectCharset {
         RectCharset::from("══║║╔╗╚╝")
     }
 }
 
 impl From<&str> for RectCharset {
+    /// A utility function that generates a [RectCharset] from the characters in a `&str`.
+    ///
+    /// # Panics
+    ///
+    /// This function will `panic!` if the receiver is a `&str` of fewer than 8 characters.
     fn from(item: &str) -> Self {
         if item.len() < 8 {
             panic!("Build a RectCharset requires at least 8 characters.");
@@ -49,10 +94,65 @@ impl From<&str> for RectCharset {
     }
 }
 
+/// An interface for types that can be drawn by a [Pencil].
 pub trait Drawable {
     fn draw(&self, pencil: Pencil);
 }
 
+/// An object that stores several text style options and the [Canvas] to which text and shapes can
+/// be written.
+///
+/// # Options
+///
+/// - Origin - A [Vec2] on the [Canvas] which becomes the new "origin" for drawn characters. All
+///   [Vec2]s subsequently passed to associated functions are relative to this [Vec2]. For example,
+///   if the origin is set to (2, 3) and [draw_text()](Pencil::draw_text) is called with position
+///   (1, 0), the string will be drawn at (3, 3).
+/// - Foreground (character) [Color]
+/// - Background [Color]
+/// - [Style] (boldness)
+///
+/// # Examples
+///
+/// An introductory example using a [Pencil] could be:
+///
+/// ```rust,no_run
+/// # use ruscii::app::{App, State};
+/// # use ruscii::terminal::{Window};
+/// # use ruscii::drawing::{Pencil};
+/// # use ruscii::spatial::{Vec2};
+/// #
+/// # fn main() {
+/// #    let mut app = App::new();
+/// #
+/// #    app.run(|app_state: &mut State, window: &mut Window| {
+/// let mut pencil = Pencil::new(window.canvas_mut());
+/// pencil.draw_text("Hello, world!", Vec2::xy(0, 0));
+/// #    });
+/// # }
+/// ```
+///
+/// Most associated functions return a mutable reference to the function's receiver (`self`),
+/// allowing for chaining multiple calls as in the following example.
+///
+/// From `pong.rs`:
+///
+/// ```rust,ignore
+/// Pencil::new(window.canvas_mut())
+///     .draw_text(&format!("FPS: {}", fps_counter.count()), Vec2::xy(0, 0))
+///     .set_origin(Vec2::xy((win_size.x - score_msg.len() as i32) / 2, (win_size.y - state.dimension.y) / 2 - 1))
+///     .draw_text(score_msg, Vec2::xy(0, 0))
+///     .set_origin((win_size - state.dimension) / 2)
+///     .draw_rect(&RectCharset::simple_round_lines(), Vec2::zero(), state.dimension)
+///     .draw_vline('\'', Vec2::xy(state.dimension.x / 2, 1), state.dimension.y - 2)
+///     .set_foreground(Color::Blue)
+///     .draw_rect(&RectCharset::double_lines(), state.left_player.position - Vec2::y(PAD_HEIGHT), Vec2::xy(2, PAD_HEIGHT * 2))
+///     .set_foreground(Color::Red)
+///     .draw_rect(&RectCharset::double_lines(), state.right_player.position - Vec2::y(PAD_HEIGHT), Vec2::xy(2, PAD_HEIGHT * 2))
+///     .set_foreground(Color::Yellow)
+///     .set_style(Style::Bold)
+///     .draw_char('o', state.ball_position);
+///```
 pub struct Pencil<'a> {
     origin: Vec2,
     foreground: Color,
@@ -62,6 +162,7 @@ pub struct Pencil<'a> {
 }
 
 impl<'a> Pencil<'a> {
+    /// Constructs a [Pencil] that can write to the given [Canvas].
     pub fn new(canvas: &'a mut Canvas) -> Pencil {
         Pencil {
             origin: Vec2::zero(),
@@ -89,7 +190,7 @@ impl<'a> Pencil<'a> {
                 element.foreground = self.foreground;
                 element.background = self.background;
                 element.style = self.style;
-            },
+            }
             None => (),
         };
     }
@@ -119,6 +220,7 @@ impl<'a> Pencil<'a> {
         self
     }
 
+    /// Moves the origin by the given `displacement`.
     pub fn move_origin(&mut self, displacement: Vec2) -> &mut Pencil<'a> {
         self.origin += displacement;
         self
@@ -139,11 +241,20 @@ impl<'a> Pencil<'a> {
         self
     }
 
+    /// Draws a character at the given `position` according to the previously set text style options.
+    ///
+    /// Returns the receiver for chaining.
     pub fn draw_char(&mut self, value: char, position: Vec2) -> &mut Pencil<'a> {
         self.draw_element(self.origin + position, value);
         self
     }
 
+    /// Draws a string at the given `position` according to the previously set text style options.
+    ///
+    /// If the string has multiple characters, each subsequent character is drawn one point to the
+    /// right (as you'd probably expect).
+    ///
+    /// Returns the receiver for chaining.
     pub fn draw_text(&mut self, text: &str, position: Vec2) -> &mut Pencil<'a> {
         let width = self.canvas.dimension().x;
         for (i, value) in text.chars().enumerate() {
@@ -154,11 +265,19 @@ impl<'a> Pencil<'a> {
         self
     }
 
+    /// Draws a string centered at the given `position` according to the previously set text style
+    /// options.
+    ///
+    /// Returns the receiver for chaining.
     pub fn draw_center_text(&mut self, text: &str, position: Vec2) -> &mut Pencil<'a> {
         let position = position - Vec2::x(text.len() as i32 / 2);
         self.draw_text(text, position)
     }
 
+    /// Draws a vertical line starting from the given `position` and extending for `size`
+    /// lines downwards. This line is composed of the given `value` characters.
+    ///
+    /// Returns the receiver for chaining.
     pub fn draw_vline<T: ToPrimitive>(&mut self, value: char, position: Vec2, size: T) -> &mut Pencil<'a> {
         let elem_pos = self.origin + position;
         for i in 0..size.to_usize().unwrap() as usize {
@@ -167,6 +286,10 @@ impl<'a> Pencil<'a> {
         self
     }
 
+    /// Draws a horizontal line starting from the given `position` and extending for `size`
+    /// lines rightwards. This line is composed of the given `value` characters.
+    ///
+    /// Returns the receiver for chaining.
     pub fn draw_hline<T: ToPrimitive>(&mut self, value: char, position: Vec2, size: T) -> &mut Pencil<'a> {
         let elem_pos = self.origin + position;
         for i in 0..size.to_usize().unwrap() as usize {
@@ -175,6 +298,13 @@ impl<'a> Pencil<'a> {
         self
     }
 
+    /// Draws an empty rectangle from the given `charset` with the given `dimension`. The given
+    /// `position` sets the position of the top-left corner of the rectangle.
+    ///
+    /// The given `dimension` includes the characters used to draw the rectangle, so the dimension
+    /// of the enclosed space has a width of `dimension.x - 2` and a height of `dimension.y - 2`.
+    ///
+    /// Returns the receiver for chaining.
     pub fn draw_rect(&mut self, charset: &RectCharset, position: Vec2, dimension: Vec2) -> &mut Pencil<'a> {
         self.move_origin(position)
             .draw_hline(charset.top, Vec2::x(0), dimension.x - 1)
@@ -187,14 +317,23 @@ impl<'a> Pencil<'a> {
             .draw_char(charset.bottom_right, dimension - Vec2::xy(1, 1))
             .move_origin(-position)
     }
-    pub fn draw_filled_rect(&mut self, fill: char,position: Vec2, dimension: Vec2) -> &mut Pencil<'a> {
+
+    /// Draws a filled rectangle from the given `charset` with the given `dimension`. The given
+    /// `position` sets the position of the top-left corner of the rectangle. The rectangle is
+    /// composed of the given `fill` characters.
+    ///
+    /// Returns the receiver for chaining.
+    pub fn draw_filled_rect(&mut self, fill: char, position: Vec2, dimension: Vec2) -> &mut Pencil<'a> {
         self.move_origin(position);
         for i in 0..dimension.x {
-            self.draw_vline(fill, Vec2::xy(position.x+i, position.y), dimension.y);
+            self.draw_vline(fill, Vec2::xy(position.x + i, position.y), dimension.y);
         }
         self.move_origin(-position)
     }
 
+    /// Draws a [Drawable] at and sets the origin to the given `position`.
+    ///
+    /// Returns the receiver for chaining.
     pub fn draw_at<D: Drawable>(&mut self, drawable: &D, position: Vec2) -> &mut Pencil<'a> {
         let mut new_pencil = self.new_one();
         new_pencil.move_origin(position);
@@ -202,6 +341,9 @@ impl<'a> Pencil<'a> {
         self
     }
 
+    /// Draws a [Drawable] at (0, 0).
+    ///
+    /// Returns the receiver for chaining.
     pub fn draw<D: Drawable>(&mut self, drawable: &D) -> &mut Pencil<'a> {
         self.draw_at(drawable, Vec2::zero())
     }
