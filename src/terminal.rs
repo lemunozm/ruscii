@@ -1,11 +1,35 @@
+//! # Terminal
+//!
+//! The `terminal` module ...
+
 use std::io::{self, Write, BufWriter};
 
 use crossterm as ct;
 use super::spatial::Vec2;
 
-// ================================================================================
-// VISUAL ELEMENT
-// ================================================================================
+/// A set of common colors and an [Color::Xterm] value that allows you to pass an arbitrary ANSI
+/// 8-bit color using its Xterm number (compatible with Windows 10 and most terminals).
+///
+/// # Example
+///
+/// For instance, to set a [Pencil]'s foreground color to Xterm color DarkCyan (`#00af87`), you
+/// would do something similar to the following:
+///
+/// ```rust,no_run
+/// # use ruscii::app::{App, State};
+/// # use ruscii::drawing::Pencil;
+/// # use ruscii::terminal::{Color, Window};
+/// #
+/// # let mut app = App::new();
+/// #
+/// # app.run(|app_state: &mut State, window: &mut Window| {
+/// let mut pencil = Pencil::new(window.canvas_mut());
+/// pencil.set_foreground(Color::Xterm(36));
+/// # });
+/// ```
+///
+/// For reference, see the
+/// [256 Colors Cheat Sheet](https://www.ditig.com/256-colors-cheat-sheet).
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum Color {
     Black,
