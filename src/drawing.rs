@@ -94,11 +94,6 @@ impl From<&str> for RectCharset {
     }
 }
 
-/// An interface for types that can be drawn by a [Pencil].
-pub trait Drawable {
-    fn draw(&self, pencil: Pencil);
-}
-
 /// An object that stores several text style options and the [Canvas] to which text and shapes can
 /// be written.
 ///
@@ -319,34 +314,5 @@ impl<'a> Pencil<'a> {
             self.draw_vline(fill, Vec2::xy(position.x + i, position.y), dimension.y);
         }
         self.move_origin(-position)
-    }
-
-    /// Draws a [Drawable] at and sets the origin to the given `position`.
-    ///
-    /// Returns the receiver for chaining.
-    pub fn draw_at<D: Drawable>(&mut self, drawable: &D, position: Vec2) -> &mut Pencil<'a> {
-        let mut new_pencil = self.clone();
-        new_pencil.move_origin(position);
-        drawable.draw(new_pencil);
-        self
-    }
-
-    /// Draws a [Drawable] at (0, 0).
-    ///
-    /// Returns the receiver for chaining.
-    pub fn draw<D: Drawable>(&mut self, drawable: &D) -> &mut Pencil<'a> {
-        self.draw_at(drawable, Vec2::zero())
-    }
-}
-
-impl Clone for Pencil<'_> {
-    fn clone(&self) -> Self {
-        Pencil {
-            origin: self.origin,
-            foreground: self.foreground,
-            background: self.background,
-            style: self.style,
-            canvas: self.canvas,
-        }
     }
 }
