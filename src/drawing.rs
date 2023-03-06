@@ -49,10 +49,6 @@ impl From<&str> for RectCharset {
     }
 }
 
-pub trait Drawable {
-    fn draw(&self, pencil: &mut Pencil);
-}
-
 pub struct Pencil<'a> {
     origin: Vec2,
     foreground: Color,
@@ -183,16 +179,5 @@ impl<'a> Pencil<'a> {
             self.draw_vline(fill, Vec2::xy(position.x + i, position.y), dimension.y);
         }
         self.move_origin(-position)
-    }
-
-    pub fn draw_at<D: Drawable>(&mut self, drawable: &D, position: Vec2) -> &mut Pencil<'a> {
-        self.move_origin(position);
-        drawable.draw(self);
-        self.move_origin(-position);
-        self
-    }
-
-    pub fn draw<D: Drawable>(&mut self, drawable: &D) -> &mut Pencil<'a> {
-        self.draw_at(drawable, Vec2::zero())
     }
 }
