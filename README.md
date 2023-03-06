@@ -32,7 +32,7 @@ If your system does not have them, you can use the following commands in the ter
 specific Linux distribution.
 
 - In Ubuntu or Debian:
-  ```
+  ```sh
   sudo apt install libx11-dev
   ```
 - In Fedora, RHEL, or CentOS:
