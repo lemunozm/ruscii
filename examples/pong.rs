@@ -11,8 +11,8 @@ const PAD_HEIGHT: i32 = 3;
 
 struct PlayerState {
     pub position: Vec2,
-    pub direction: i32,
     // -1, 0, 1
+    pub direction: i32,
     pub score: usize,
 }
 
