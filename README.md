@@ -36,7 +36,7 @@ specific Linux distribution.
   sudo apt install libx11-dev
   ```
 - In Fedora, RHEL, or CentOS:
-  ```
+  ```sh
   sudo dnf install xorg-x11-server-devel
   ```
 
