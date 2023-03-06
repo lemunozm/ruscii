@@ -50,7 +50,7 @@ impl From<&str> for RectCharset {
 }
 
 pub trait Drawable {
-    fn draw(&self, pencil: Pencil);
+    fn draw(&self, pencil: &mut Pencil);
 }
 
 pub struct Pencil<'a> {
@@ -186,25 +186,13 @@ impl<'a> Pencil<'a> {
     }
 
     pub fn draw_at<D: Drawable>(&mut self, drawable: &D, position: Vec2) -> &mut Pencil<'a> {
-        let mut new_pencil = self.clone();
-        new_pencil.move_origin(position);
-        drawable.draw(new_pencil);
+        self.move_origin(position);
+        drawable.draw(self);
+        self.move_origin(-position);
         self
     }
 
     pub fn draw<D: Drawable>(&mut self, drawable: &D) -> &mut Pencil<'a> {
         self.draw_at(drawable, Vec2::zero())
-    }
-}
-
-impl Clone for Pencil<'_> {
-    fn clone(&self) -> Self {
-        Pencil {
-            origin: self.origin,
-            foreground: self.foreground,
-            background: self.background,
-            style: self.style,
-            canvas: self.canvas,
-        }
     }
 }
