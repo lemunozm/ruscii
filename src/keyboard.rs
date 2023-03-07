@@ -40,6 +40,7 @@
 //! });
 //! ```
 
+use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender};
@@ -213,8 +214,8 @@ pub struct Keyboard {
     last_key_stamp: usize,
 }
 
-impl Keyboard {
-    pub fn new() -> Keyboard {
+impl Default for Keyboard {
+    fn default() -> Self {
         let thread_running = Arc::new(AtomicBool::new(true));
 
         let (acc_sender, acc_receiver): (Sender<KeyEvent>, Receiver<KeyEvent>) = mpsc::channel();
@@ -225,8 +226,9 @@ impl Keyboard {
         let pressed_event_sender = event_sender.clone();
         let acc_thread = thread::spawn(move || {
             let mut event_accumulator: Vec<(KeyEvent, Instant)> = vec![];
-            let mut last_input_timestamp =
-                Instant::now() - Duration::from_millis(KEY_EVENT_FOCUS_DELAY_MS + 1);
+            let mut last_input_timestamp = Instant::now()
+                .checked_sub(Duration::from_millis(KEY_EVENT_FOCUS_DELAY_MS + 1))
+                .unwrap();
             while acc_thread_running.load(Ordering::SeqCst) {
                 if let Some(timestamp) = Self::process_input_timestamp() {
                     last_input_timestamp = timestamp;
@@ -263,7 +265,7 @@ impl Keyboard {
         });
 
         let event_thread_running = thread_running.clone();
-        let released_event_sender = event_sender.clone();
+        let released_event_sender = event_sender;
         let event_thread = thread::spawn(move || {
             let device = dq::DeviceState::new();
             let mut last_device_state = Vec::new();
@@ -280,7 +282,7 @@ impl Keyboard {
             }
         });
 
-        Keyboard {
+        Self {
             thread_running,
             event_thread: Some(event_thread),
             acc_thread: Some(acc_thread),
@@ -290,7 +292,9 @@ impl Keyboard {
             last_key_stamp: 0,
         }
     }
+}
 
+impl Keyboard {
     /// Retrieves all the [`KeyEvents`] that were fired during the previous frame.
     pub fn last_key_events(&self) -> &Vec<KeyEvent> {
         &self.last_key_events
@@ -311,8 +315,8 @@ impl Keyboard {
 
         for event in &events {
             if let KeyEvent::Pressed(key) = *event {
-                if !self.state.contains_key(&key) {
-                    self.state.insert(key, self.last_key_stamp);
+                if let Entry::Vacant(entry) = self.state.entry(key) {
+                    entry.insert(self.last_key_stamp);
                     self.last_key_events.push(*event);
                     self.last_key_stamp += 1;
                 }
@@ -321,8 +325,8 @@ impl Keyboard {
 
         for event in &events {
             if let KeyEvent::Released(key) = *event {
-                if self.state.contains_key(&key) {
-                    self.state.remove(&key);
+                if let Entry::Occupied(entry) = self.state.entry(key) {
+                    entry.remove();
                     self.last_key_events.push(*event);
                 }
             }
@@ -347,14 +351,15 @@ impl Keyboard {
 
     fn process_pressed_event(
         sender: &Sender<KeyEvent>,
-        new_state: &Vec<dq::Keycode>,
-        last_state: &Vec<dq::Keycode>,
+        new_state: &[dq::Keycode],
+        last_state: &[dq::Keycode],
     ) {
         let pressed: Vec<dq::Keycode> = new_state
-            .clone()
-            .into_iter()
+            .iter()
+            .cloned()
             .filter(|x| !last_state.contains(x))
             .collect();
+
         for keycode in pressed {
             let key = Self::transform_device_key(&keycode);
             if key != Key::Unknown {
@@ -365,14 +370,15 @@ impl Keyboard {
 
     fn process_released_event(
         sender: &Sender<KeyEvent>,
-        new_state: &Vec<dq::Keycode>,
-        last_state: &Vec<dq::Keycode>,
+        new_state: &[dq::Keycode],
+        last_state: &[dq::Keycode],
     ) {
         let released: Vec<dq::Keycode> = last_state
-            .clone()
-            .into_iter()
+            .iter()
+            .cloned()
             .filter(|x| !new_state.contains(x))
             .collect();
+
         for keycode in released {
             let key = Self::transform_device_key(&keycode);
             if key != Key::Unknown {

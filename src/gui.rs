@@ -27,8 +27,8 @@ use std::time::SystemTime;
 /// # use ruscii::spatial::{Vec2};
 /// # use ruscii::gui::{FPSCounter};
 ///
-/// let mut app = App::new();
-/// let mut fps_counter = FPSCounter::new();
+/// let mut app = App::default();
+/// let mut fps_counter = FPSCounter::default();
 ///
 /// app.run(|app_state: &mut State, window: &mut Window| {
 ///     fps_counter.update();  // Updates the FPS
@@ -40,6 +40,7 @@ use std::time::SystemTime;
 ///     );
 /// });
 /// ```
+#[derive(Default)]
 pub struct FPSCounter {
     fps: u32,
     fps_time_stamp: u128,
@@ -47,15 +48,6 @@ pub struct FPSCounter {
 }
 
 impl FPSCounter {
-    /// Creates a new [FPSCounter] with default values.
-    pub fn new() -> FPSCounter {
-        FPSCounter {
-            fps: 0,
-            fps_time_stamp: 0,
-            frame_counter: 0,
-        }
-    }
-
     /// Retrieves the framerate and updates the [FPSCounter].
     pub fn update(&mut self) {
         let current_time = SystemTime::now()

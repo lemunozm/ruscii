@@ -17,12 +17,12 @@
 //! # use ruscii::terminal::{Window, Color, VisualElement};
 //! #
 //! fn main() {
-//!     let mut window = Window::new();
+//!     let mut window = Window::default();
 //!     window.open();
 //!     println!("This is an open window");
 //!     std::thread::sleep(std::time::Duration::from_secs(2));
 //!
-//!     let mut default = VisualElement::new();
+//!     let mut default = VisualElement::default();
 //!     default.background = Color::Red;
 //!     window.canvas_mut().set_default_element(&default);
 //!     window.clear();
@@ -52,7 +52,7 @@ use crossterm as ct;
 /// # use ruscii::drawing::Pencil;
 /// # use ruscii::terminal::{Color, Window};
 /// #
-/// # let mut app = App::new();
+/// # let mut app = App::default();
 /// #
 /// # app.run(|app_state: &mut State, window: &mut Window| {
 /// let mut pencil = Pencil::new(window.canvas_mut());
@@ -126,10 +126,10 @@ pub struct VisualElement {
     pub value: char,
 }
 
-impl VisualElement {
+impl Default for VisualElement {
     /// Constructs a [`VisualElement`] with the default terminal styles.
-    pub fn new() -> VisualElement {
-        VisualElement {
+    fn default() -> Self {
+        Self {
             style: Style::Plain,
             background: Color::Black,
             foreground: Color::White,
@@ -181,7 +181,7 @@ impl Canvas {
     /// # use ruscii::spatial::Vec2;
     /// # use ruscii::terminal::{Canvas, VisualElement};
     /// #
-    /// let canvas = Canvas::new(Vec2::xy(10, 20), &VisualElement::new());
+    /// let canvas = Canvas::new(Vec2::xy(10, 20), &VisualElement::default());
     /// let a = Vec2::xy(10, 20);
     /// let b = Vec2::xy(9, 19);
     ///
@@ -195,7 +195,7 @@ impl Canvas {
     /// # use ruscii::spatial::Vec2;
     /// # use ruscii::terminal::{Canvas, VisualElement};
     /// #
-    /// let canvas = Canvas::new(Vec2::xy(10, 20), &VisualElement::new());
+    /// let canvas = Canvas::new(Vec2::xy(10, 20), &VisualElement::default());
     /// let p = Vec2::xy(-1, -3);
     ///
     /// assert!(!canvas.contains(p));
@@ -247,19 +247,21 @@ pub struct Window {
     target: BufWriter<io::Stdout>,
 }
 
-impl Window {
+impl Default for Window {
     /// Constructs a [`Window`] with the automatically detected size and the target set to the
     /// [`io::stdout`].
-    pub fn new() -> Window {
-        Window {
-            canvas: Canvas::new(size(), &VisualElement::new()),
+    fn default() -> Self {
+        Self {
+            canvas: Canvas::new(size(), &VisualElement::default()),
             target: BufWriter::with_capacity(
                 size().x as usize * size().y as usize * 50,
                 io::stdout(),
             ),
         }
     }
+}
 
+impl Window {
     pub fn canvas(&self) -> &Canvas {
         &self.canvas
     }

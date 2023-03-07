@@ -18,7 +18,6 @@ pub struct Config {
 }
 
 impl Config {
-    /// Constructs a new [`Config`] with a default maximum framerate of 30.
     pub fn new() -> Config {
         Config { fps: 30 }
     }
@@ -31,8 +30,16 @@ impl Config {
     }
 }
 
+/// Constructs a new [`Config`] with a default maximum framerate of 30.
+impl Default for Config {
+    fn default() -> Self {
+        Self { fps: 30 }
+    }
+}
+
 /// Contains the run state of the the [`App`] and the [`Keyboard`] through [`State::keyboard`] for
 /// the key event interface.
+#[derive(Default)]
 pub struct State {
     running: Arc<AtomicBool>,
     keyboard: Keyboard,
@@ -41,15 +48,6 @@ pub struct State {
 }
 
 impl State {
-    pub fn new() -> State {
-        State {
-            running: Arc::new(AtomicBool::new(false)),
-            keyboard: Keyboard::new(),
-            dt: time::Duration::new(0, 0),
-            step: 0,
-        }
-    }
-
     pub fn run(&self) {
         self.running.store(true, Ordering::SeqCst);
     }
@@ -81,6 +79,7 @@ impl State {
 ///
 /// [`App`] objects are created with a default maximum framerate of 30 using [`App::new`]. To change
 /// this, pass a [`Config`] object with the desired framerate using [`App::config`].
+#[derive(Default)]
 pub struct App {
     config: Config,
     state: State,
@@ -88,21 +87,12 @@ pub struct App {
 }
 
 impl App {
-    /// Constructs an [`App`] with a new [`Config`], [`State`], and [`Window`].
-    pub fn new() -> App {
-        App {
-            config: Config::new(),
-            state: State::new(),
-            window: Window::new(),
-        }
-    }
-
     /// Constructs an [`App`] with the given [`Config`].
     pub fn config(config: Config) -> App {
         App {
             config,
-            state: State::new(),
-            window: Window::new(),
+            state: State::default(),
+            window: Window::default(),
         }
     }
 
@@ -147,7 +137,7 @@ impl App {
             self.window.close();
         }));
 
-        if let Err(_) = result {
+        if result.is_err() {
             println!("\n\n[Press 'enter' to recover the terminal]");
             io::stdin().lock().lines().next().unwrap().unwrap();
             self.window.close();

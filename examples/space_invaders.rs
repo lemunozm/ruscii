@@ -152,9 +152,9 @@ impl GameState {
 }
 
 fn main() {
-    let mut app = App::new();
+    let mut app = App::default();
     let mut state = GameState::new(Vec2::xy(60, 22));
-    let mut fps_counter = FPSCounter::new();
+    let mut fps_counter = FPSCounter::default();
 
     app.run(|app_state: &mut State, window: &mut Window| {
         for key_event in app_state.keyboard().last_key_events() {

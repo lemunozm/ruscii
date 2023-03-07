@@ -118,7 +118,7 @@ impl From<&str> for RectCharset {
 /// # use ruscii::spatial::{Vec2};
 /// #
 /// # fn main() {
-/// #    let mut app = App::new();
+/// #    let mut app = App::default();
 /// #
 /// #    app.run(|app_state: &mut State, window: &mut Window| {
 /// let mut pencil = Pencil::new(window.canvas_mut());
@@ -169,15 +169,12 @@ impl<'a> Pencil<'a> {
     }
 
     fn draw_element(&mut self, position: Vec2, value: char) {
-        match self.canvas.elem_mut(position) {
-            Some(element) => {
-                element.value = value;
-                element.foreground = self.foreground;
-                element.background = self.background;
-                element.style = self.style;
-            }
-            None => (),
-        };
+        if let Some(element) = self.canvas.elem_mut(position) {
+            element.value = value;
+            element.foreground = self.foreground;
+            element.background = self.background;
+            element.style = self.style;
+        }
     }
 
     pub fn origin(&self) -> Vec2 {
@@ -270,7 +267,7 @@ impl<'a> Pencil<'a> {
         size: T,
     ) -> &mut Pencil<'a> {
         let elem_pos = self.origin + position;
-        for i in 0..size.to_usize().unwrap() as usize {
+        for i in 0..size.to_usize().unwrap() {
             self.draw_element(elem_pos + Vec2::y(i), value);
         }
         self
@@ -287,7 +284,7 @@ impl<'a> Pencil<'a> {
         size: T,
     ) -> &mut Pencil<'a> {
         let elem_pos = self.origin + position;
-        for i in 0..size.to_usize().unwrap() as usize {
+        for i in 0..size.to_usize().unwrap() {
             self.draw_element(elem_pos + Vec2::x(i), value);
         }
         self

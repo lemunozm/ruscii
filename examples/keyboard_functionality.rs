@@ -6,7 +6,7 @@ use ruscii::terminal::Window;
 
 fn main() {
     let mut key_events = Vec::new();
-    let mut app = App::new();
+    let mut app = App::default();
 
     app.run(|app_state: &mut State, window: &mut Window| {
         for key_event in app_state.keyboard().last_key_events() {

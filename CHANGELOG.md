@@ -1,3 +1,6 @@
+## Current 0.4.0
+- Remove most of the `new()` methods in order to use `default()`.
+
 ## Current 0.3.2
 - Improvement key support.
 

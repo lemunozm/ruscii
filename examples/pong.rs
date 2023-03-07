@@ -111,8 +111,8 @@ impl GameState {
 }
 
 fn main() {
-    let mut fps_counter = FPSCounter::new();
-    let mut app = App::new();
+    let mut fps_counter = FPSCounter::default();
+    let mut app = App::default();
     let win_size = app.window().size();
     let mut state = GameState::new((win_size * 4) / 5);
 
