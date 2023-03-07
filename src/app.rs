@@ -30,8 +30,8 @@ impl Config {
     }
 }
 
-/// Constructs a new [`Config`] with a default maximum framerate of 30.
 impl Default for Config {
+    /// Constructs a [`Config`] with a default maximum framerate of 30.
     fn default() -> Self {
         Self { fps: 30 }
     }
