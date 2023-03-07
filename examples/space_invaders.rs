@@ -83,7 +83,7 @@ impl GameState {
         if self.last_aliens_shots + 5 < frame {
             self.last_aliens_shots = frame;
             for alien in &self.aliens {
-                let must_shot = rand::thread_rng().gen_range(0..200) == 0;
+                let must_shot = rand::thread_rng().gen_range(0, 200) == 0;
                 if must_shot {
                     self.aliens_shots.push(*alien);
                 }

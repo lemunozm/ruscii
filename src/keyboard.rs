@@ -276,7 +276,7 @@ impl Keyboard {
                     &new_device_state,
                     &last_device_state,
                 );
-                std::mem::replace(&mut last_device_state, new_device_state);
+                last_device_state = new_device_state;
             }
         });
 
