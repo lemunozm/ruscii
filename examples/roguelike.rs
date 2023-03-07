@@ -1,9 +1,9 @@
 use ruscii::app::{App, Config, State};
-use ruscii::terminal::{Window, Color};
 use ruscii::drawing::{Pencil, RectCharset};
-use ruscii::keyboard::{KeyEvent, Key};
-use ruscii::spatial::{Vec2};
-use ruscii::gui::{FPSCounter};
+use ruscii::gui::FPSCounter;
+use ruscii::keyboard::{Key, KeyEvent};
+use ruscii::spatial::Vec2;
+use ruscii::terminal::{Color, Window};
 
 struct GameState {
     player_pos: Vec2,
@@ -16,8 +16,11 @@ impl GameState {
         let future_pos = self.player_pos + self.player_move;
         self.player_move.clear();
 
-        if future_pos.x < (self.map_dim.x - 1) && future_pos.x > 0
-          && future_pos.y < (self.map_dim.y - 1) && future_pos.y > 0 {
+        if future_pos.x < (self.map_dim.x - 1)
+            && future_pos.x > 0
+            && future_pos.y < (self.map_dim.y - 1)
+            && future_pos.y > 0
+        {
             self.player_pos = future_pos;
         }
     }

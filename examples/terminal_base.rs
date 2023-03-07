@@ -1,9 +1,9 @@
 use ruscii::app::{App, Config, State};
-use ruscii::terminal::{Window};
-use ruscii::drawing::{Pencil};
-use ruscii::keyboard::{KeyEvent, Key};
-use ruscii::spatial::{Vec2};
-use ruscii::gui::{FPSCounter};
+use ruscii::drawing::Pencil;
+use ruscii::gui::FPSCounter;
+use ruscii::keyboard::{Key, KeyEvent};
+use ruscii::spatial::Vec2;
+use ruscii::terminal::Window;
 
 fn main() {
     let mut fps_counter = FPSCounter::new();

@@ -3,12 +3,12 @@
 //! The `app` module provides functionality related to application itself, including its
 //! framerate, the keyboard, and its execution.
 
-use super::keyboard::{Keyboard};
-use super::terminal::{Window};
+use super::keyboard::Keyboard;
+use super::terminal::Window;
 
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc};
-use std::{thread, time, panic};
+use std::sync::Arc;
+use std::{panic, thread, time};
 
 use std::io::{self, BufRead};
 
@@ -121,7 +121,9 @@ impl App {
     ///
     /// Catches all unwinding panics that occur within `frame_action`, allowing terminal recovery.
     pub fn run<F>(&mut self, mut frame_action: F)
-        where F: FnMut(&mut State, &mut Window) {
+    where
+        F: FnMut(&mut State, &mut Window),
+    {
         let expected_duration = time::Duration::from_nanos(1_000_000_000 / self.config.fps as u64);
         self.state.run();
 

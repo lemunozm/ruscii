@@ -11,8 +11,8 @@
 //! [ruscii](https://github.com/lemunozm/ruscii) repository.
 
 pub mod app;
+pub mod drawing;
 pub mod gui;
-pub mod terminal;
 pub mod keyboard;
 pub mod spatial;
-pub mod drawing;
+pub mod terminal;

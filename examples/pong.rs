@@ -1,9 +1,9 @@
 use ruscii::app::{App, State};
-use ruscii::terminal::{Window, Color, Style};
 use ruscii::drawing::{Pencil, RectCharset};
-use ruscii::keyboard::{KeyEvent, Key};
-use ruscii::spatial::{Vec2};
-use ruscii::gui::{FPSCounter};
+use ruscii::gui::FPSCounter;
+use ruscii::keyboard::{Key, KeyEvent};
+use ruscii::spatial::Vec2;
+use ruscii::terminal::{Color, Style, Window};
 
 use rand::{self, prelude::*};
 
@@ -28,8 +28,16 @@ impl GameState {
     pub fn new(dim: Vec2) -> Self {
         Self {
             dimension: dim,
-            left_player: PlayerState { position: Vec2::xy(1, dim.y / 2), direction: 0, score: 0 },
-            right_player: PlayerState { position: Vec2::xy(dim.x - 3, dim.y / 2), direction: 0, score: 0 },
+            left_player: PlayerState {
+                position: Vec2::xy(1, dim.y / 2),
+                direction: 0,
+                score: 0,
+            },
+            right_player: PlayerState {
+                position: Vec2::xy(dim.x - 3, dim.y / 2),
+                direction: 0,
+                score: 0,
+            },
             ball_position: dim / 2,
             ball_speed: Self::random_ball_direction(),
         }
@@ -45,13 +53,17 @@ impl GameState {
     pub fn update(&mut self) {
         self.ball_position += self.ball_speed;
 
-        if self.left_player.position.y + PAD_HEIGHT < self.dimension.y && self.left_player.direction > 0
-            || self.left_player.position.y - PAD_HEIGHT > 0 && self.left_player.direction < 0 {
+        if self.left_player.position.y + PAD_HEIGHT < self.dimension.y
+            && self.left_player.direction > 0
+            || self.left_player.position.y - PAD_HEIGHT > 0 && self.left_player.direction < 0
+        {
             self.left_player.position.y += self.left_player.direction;
         }
 
-        if self.right_player.position.y + PAD_HEIGHT < self.dimension.y && self.right_player.direction > 0
-            || self.right_player.position.y - PAD_HEIGHT > 0 && self.right_player.direction < 0 {
+        if self.right_player.position.y + PAD_HEIGHT < self.dimension.y
+            && self.right_player.direction > 0
+            || self.right_player.position.y - PAD_HEIGHT > 0 && self.right_player.direction < 0
+        {
             self.right_player.position.y += self.right_player.direction;
         }
 
@@ -67,14 +79,16 @@ impl GameState {
 
         if self.ball_position.x <= self.left_player.position.x + 1
             && self.ball_position.y <= self.left_player.position.y + PAD_HEIGHT
-            && self.ball_position.y >= self.left_player.position.y - PAD_HEIGHT {
+            && self.ball_position.y >= self.left_player.position.y - PAD_HEIGHT
+        {
             self.ball_position.x = self.left_player.position.x + 1;
             self.ball_speed.x = -self.ball_speed.x;
         }
 
         if self.ball_position.x >= self.right_player.position.x
             && self.ball_position.y <= self.right_player.position.y + PAD_HEIGHT
-            && self.ball_position.y >= self.right_player.position.y - PAD_HEIGHT {
+            && self.ball_position.y >= self.right_player.position.y - PAD_HEIGHT
+        {
             self.ball_position.x = self.right_player.position.x;
             self.ball_speed.x = -self.ball_speed.x;
         }
@@ -126,19 +140,41 @@ fn main() {
             state.update();
         }
 
-        let score_msg = &format!("Left score: {}  -  Right score: {}", state.left_player.score, state.right_player.score);
+        let score_msg = &format!(
+            "Left score: {}  -  Right score: {}",
+            state.left_player.score, state.right_player.score
+        );
 
         Pencil::new(window.canvas_mut())
             .draw_text(&format!("FPS: {}", fps_counter.count()), Vec2::xy(0, 0))
-            .set_origin(Vec2::xy((win_size.x - score_msg.len() as i32) / 2, (win_size.y - state.dimension.y) / 2 - 1))
+            .set_origin(Vec2::xy(
+                (win_size.x - score_msg.len() as i32) / 2,
+                (win_size.y - state.dimension.y) / 2 - 1,
+            ))
             .draw_text(score_msg, Vec2::xy(0, 0))
             .set_origin((win_size - state.dimension) / 2)
-            .draw_rect(&RectCharset::simple_round_lines(), Vec2::zero(), state.dimension)
-            .draw_vline('\'', Vec2::xy(state.dimension.x / 2, 1), state.dimension.y - 2)
+            .draw_rect(
+                &RectCharset::simple_round_lines(),
+                Vec2::zero(),
+                state.dimension,
+            )
+            .draw_vline(
+                '\'',
+                Vec2::xy(state.dimension.x / 2, 1),
+                state.dimension.y - 2,
+            )
             .set_foreground(Color::Blue)
-            .draw_rect(&RectCharset::double_lines(), state.left_player.position - Vec2::y(PAD_HEIGHT), Vec2::xy(2, PAD_HEIGHT * 2))
+            .draw_rect(
+                &RectCharset::double_lines(),
+                state.left_player.position - Vec2::y(PAD_HEIGHT),
+                Vec2::xy(2, PAD_HEIGHT * 2),
+            )
             .set_foreground(Color::Red)
-            .draw_rect(&RectCharset::double_lines(), state.right_player.position - Vec2::y(PAD_HEIGHT), Vec2::xy(2, PAD_HEIGHT * 2))
+            .draw_rect(
+                &RectCharset::double_lines(),
+                state.right_player.position - Vec2::y(PAD_HEIGHT),
+                Vec2::xy(2, PAD_HEIGHT * 2),
+            )
             .set_foreground(Color::Yellow)
             .set_style(Style::Bold)
             .draw_char('o', state.ball_position);

@@ -1,4 +1,4 @@
-use ruscii::terminal::{Window, Color, VisualElement};
+use ruscii::terminal::{Color, VisualElement, Window};
 
 fn main() {
     let mut window = Window::new();
