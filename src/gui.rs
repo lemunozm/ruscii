@@ -8,7 +8,7 @@
 //! [examples](https://github.com/lemunozm/ruscii/tree/master/examples) folder of the
 //! [ruscii](https://github.com/lemunozm/ruscii) repository.
 
-use std::time::{SystemTime};
+use std::time::SystemTime;
 
 /// A struct that provides access to the application's framerate.
 ///
@@ -58,7 +58,10 @@ impl FPSCounter {
 
     /// Retrieves the framerate and updates the [FPSCounter].
     pub fn update(&mut self) {
-        let current_time = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_micros();
+        let current_time = SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .unwrap()
+            .as_micros();
         self.frame_counter += 1;
         if current_time - self.fps_time_stamp > 1000000 {
             self.fps = self.frame_counter;

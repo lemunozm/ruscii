@@ -3,8 +3,8 @@
 //! The `drawing` module provides functionality for drawing shapes and text with multiple styles
 //! to the terminal screen.
 
+use super::spatial::Vec2;
 use super::terminal::{Canvas, Color, Style};
-use super::spatial::{Vec2};
 
 use num::cast::ToPrimitive;
 
@@ -263,7 +263,12 @@ impl<'a> Pencil<'a> {
     /// lines downwards. This line is composed of the given `value` characters.
     ///
     /// Returns the receiver for chaining.
-    pub fn draw_vline<T: ToPrimitive>(&mut self, value: char, position: Vec2, size: T) -> &mut Pencil<'a> {
+    pub fn draw_vline<T: ToPrimitive>(
+        &mut self,
+        value: char,
+        position: Vec2,
+        size: T,
+    ) -> &mut Pencil<'a> {
         let elem_pos = self.origin + position;
         for i in 0..size.to_usize().unwrap() as usize {
             self.draw_element(elem_pos + Vec2::y(i), value);
@@ -275,7 +280,12 @@ impl<'a> Pencil<'a> {
     /// lines rightwards. This line is composed of the given `value` characters.
     ///
     /// Returns the receiver for chaining.
-    pub fn draw_hline<T: ToPrimitive>(&mut self, value: char, position: Vec2, size: T) -> &mut Pencil<'a> {
+    pub fn draw_hline<T: ToPrimitive>(
+        &mut self,
+        value: char,
+        position: Vec2,
+        size: T,
+    ) -> &mut Pencil<'a> {
         let elem_pos = self.origin + position;
         for i in 0..size.to_usize().unwrap() as usize {
             self.draw_element(elem_pos + Vec2::x(i), value);
@@ -290,10 +300,19 @@ impl<'a> Pencil<'a> {
     /// of the enclosed space has a width of `dimension.x - 2` and a height of `dimension.y - 2`.
     ///
     /// Returns the receiver for chaining.
-    pub fn draw_rect(&mut self, charset: &RectCharset, position: Vec2, dimension: Vec2) -> &mut Pencil<'a> {
+    pub fn draw_rect(
+        &mut self,
+        charset: &RectCharset,
+        position: Vec2,
+        dimension: Vec2,
+    ) -> &mut Pencil<'a> {
         self.move_origin(position)
             .draw_hline(charset.top, Vec2::x(0), dimension.x - 1)
-            .draw_hline(charset.bottom, Vec2::xy(0, dimension.y - 1), dimension.x - 1)
+            .draw_hline(
+                charset.bottom,
+                Vec2::xy(0, dimension.y - 1),
+                dimension.x - 1,
+            )
             .draw_vline(charset.left, Vec2::y(0), dimension.y - 1)
             .draw_vline(charset.right, Vec2::xy(dimension.x - 1, 0), dimension.y - 1)
             .draw_char(charset.top_left, Vec2::xy(0, 0))
@@ -308,7 +327,12 @@ impl<'a> Pencil<'a> {
     /// composed of the given `fill` characters.
     ///
     /// Returns the receiver for chaining.
-    pub fn draw_filled_rect(&mut self, fill: char, position: Vec2, dimension: Vec2) -> &mut Pencil<'a> {
+    pub fn draw_filled_rect(
+        &mut self,
+        fill: char,
+        position: Vec2,
+        dimension: Vec2,
+    ) -> &mut Pencil<'a> {
         self.move_origin(position);
         for i in 0..dimension.x {
             self.draw_vline(fill, Vec2::xy(position.x + i, position.y), dimension.y);

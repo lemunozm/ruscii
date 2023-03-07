@@ -34,10 +34,10 @@
 //! }
 //! ```
 
-use std::io::{self, Write, BufWriter};
+use std::io::{self, BufWriter, Write};
 
-use crossterm as ct;
 use super::spatial::Vec2;
+use crossterm as ct;
 
 /// A set of common colors and a [`Color::Xterm`] value that allows you to pass an arbitrary ANSI
 /// 8-bit color using its Xterm number (compatible with Windows 10 and most UNIX terminals).
@@ -201,9 +201,7 @@ impl Canvas {
     /// assert!(!canvas.contains(p));
     /// ```
     pub fn contains(&self, pos: Vec2) -> bool {
-        0 <= pos.x && 0 <= pos.y &&
-            pos.x < self.dimension.x &&
-            pos.y < self.dimension.y
+        0 <= pos.x && 0 <= pos.y && pos.x < self.dimension.x && pos.y < self.dimension.y
     }
 
     /// Returns a reference to the [`Canvas`] cell at the given `pos` if that `pos` is
@@ -211,7 +209,9 @@ impl Canvas {
     pub fn elem(&self, pos: Vec2) -> Option<&VisualElement> {
         if self.contains(pos) {
             Some(&self.data[(pos.y * self.dimension.x + pos.x) as usize])
-        } else { None }
+        } else {
+            None
+        }
     }
 
     /// Returns a mutable reference to the [`Canvas`] cell at the given `pos` if that `pos` is
@@ -219,7 +219,9 @@ impl Canvas {
     pub fn elem_mut(&mut self, pos: Vec2) -> Option<&mut VisualElement> {
         if self.contains(pos) {
             Some(&mut self.data[(pos.y * self.dimension.x + pos.x) as usize])
-        } else { None }
+        } else {
+            None
+        }
     }
 
     /// Clears all of the [`VisualElement`] cells in the grid by setting them to clones of the
@@ -251,7 +253,10 @@ impl Window {
     pub fn new() -> Window {
         Window {
             canvas: Canvas::new(size(), &VisualElement::new()),
-            target: BufWriter::with_capacity(size().x as usize * size().y as usize * 50, io::stdout()),
+            target: BufWriter::with_capacity(
+                size().x as usize * size().y as usize * 50,
+                io::stdout(),
+            ),
         }
     }
 
@@ -270,7 +275,11 @@ impl Window {
     pub fn open(&mut self) {
         ct::queue!(self.target, ct::terminal::EnterAlternateScreen).unwrap();
         ct::queue!(self.target, ct::style::ResetColor).unwrap();
-        ct::queue!(self.target, ct::style::SetAttribute(ct::style::Attribute::Reset)).unwrap();
+        ct::queue!(
+            self.target,
+            ct::style::SetAttribute(ct::style::Attribute::Reset)
+        )
+        .unwrap();
         ct::queue!(self.target, ct::cursor::Hide).unwrap();
 
         self.clean_state();
@@ -291,7 +300,11 @@ impl Window {
         self.raw_mode(false);
 
         ct::queue!(self.target, ct::cursor::Show).unwrap();
-        ct::queue!(self.target, ct::style::SetAttribute(ct::style::Attribute::Reset)).unwrap();
+        ct::queue!(
+            self.target,
+            ct::style::SetAttribute(ct::style::Attribute::Reset)
+        )
+        .unwrap();
         ct::queue!(self.target, ct::style::ResetColor).unwrap();
         ct::queue!(self.target, ct::terminal::LeaveAlternateScreen).unwrap();
 
@@ -340,10 +353,12 @@ impl Window {
     fn clean_state(&mut self) {
         //ct::queue!(self.target, ct::style::SetAttribute(ct::style::Attribute::NoBold)).unwrap();
 
-        let term_foreground = ct::style::Color::AnsiValue(self.canvas.default_element().foreground.code());
+        let term_foreground =
+            ct::style::Color::AnsiValue(self.canvas.default_element().foreground.code());
         ct::queue!(self.target, ct::style::SetForegroundColor(term_foreground)).unwrap();
 
-        let term_background = ct::style::Color::AnsiValue(self.canvas.default_element().background.code());
+        let term_background =
+            ct::style::Color::AnsiValue(self.canvas.default_element().background.code());
         ct::queue!(self.target, ct::style::SetBackgroundColor(term_background)).unwrap();
 
         ct::queue!(self.target, ct::cursor::MoveTo(0, 0)).unwrap();

@@ -1,9 +1,9 @@
 use ruscii::app::{App, State};
-use ruscii::terminal::{Window, Color, Style};
-use ruscii::drawing::{Pencil};
-use ruscii::keyboard::{KeyEvent, Key};
-use ruscii::spatial::{Vec2};
-use ruscii::gui::{FPSCounter};
+use ruscii::drawing::Pencil;
+use ruscii::gui::FPSCounter;
+use ruscii::keyboard::{Key, KeyEvent};
+use ruscii::spatial::Vec2;
+use ruscii::terminal::{Color, Style, Window};
 
 use rand::{self, prelude::*};
 
@@ -47,7 +47,9 @@ impl GameState {
     }
 
     pub fn spaceship_move_x(&mut self, displacement: i32) {
-        if displacement < 0 && self.spaceship.x != 0 || displacement > 0 && self.spaceship.x != self.dimension.x {
+        if displacement < 0 && self.spaceship.x != 0
+            || displacement > 0 && self.spaceship.x != self.dimension.x
+        {
             self.spaceship.x += displacement;
         }
     }
@@ -63,7 +65,9 @@ impl GameState {
         let mut partial_score = 0;
         let aliens = &mut self.aliens;
         self.spaceship_shots.retain(|shot| {
-            if shot.y == 1 { return false; }
+            if shot.y == 1 {
+                return false;
+            }
             let pre_len = aliens.len();
             aliens.retain(|alien| alien != shot);
             let destroyed = aliens.len() != pre_len;
@@ -93,7 +97,9 @@ impl GameState {
         let mut damage = 0;
         let spaceship = &self.spaceship;
         self.aliens_shots.retain(|shot| {
-            if shot.y == spaceship.y && (shot.x == spaceship.x || shot.x == spaceship.x + 1|| shot.x == spaceship.x - 1) {
+            if shot.y == spaceship.y
+                && (shot.x == spaceship.x || shot.x == spaceship.x + 1 || shot.x == spaceship.x - 1)
+            {
                 damage += 1;
                 return false;
             }
@@ -101,13 +107,20 @@ impl GameState {
         });
 
         self.aliens.iter().for_each(|alien| {
-            if alien.y == spaceship.y && (alien.x == spaceship.x || alien.x == spaceship.x + 1|| alien.x == spaceship.x - 1) {
+            if alien.y == spaceship.y
+                && (alien.x == spaceship.x
+                    || alien.x == spaceship.x + 1
+                    || alien.x == spaceship.x - 1)
+            {
                 damage = 1000;
             }
         });
 
-        self.lives = if damage >= self.lives { 0 } else { self.lives - damage };
-
+        self.lives = if damage >= self.lives {
+            0
+        } else {
+            self.lives - damage
+        };
 
         if self.aliens.len() > 0 {
             let left = self.aliens.iter().min_by_key(|alien| alien.x).unwrap();
@@ -119,19 +132,19 @@ impl GameState {
                     if self.aliens_movement.1 {
                         self.aliens_movement.0 = -self.aliens_movement.0;
                         let dir = self.aliens_movement.0;
-                        self.aliens.iter_mut().for_each(|alien| alien.x = alien.x + dir);
+                        self.aliens
+                            .iter_mut()
+                            .for_each(|alien| alien.x = alien.x + dir);
                         self.aliens_movement.1 = false;
-                    }
-                    else
-                    {
+                    } else {
                         self.aliens.iter_mut().for_each(|alien| alien.y += 1);
                         self.aliens_movement.1 = true;
                     }
-                }
-                else
-                {
+                } else {
                     let dir = self.aliens_movement.0;
-                    self.aliens.iter_mut().for_each(|alien| alien.x = alien.x + dir);
+                    self.aliens
+                        .iter_mut()
+                        .for_each(|alien| alien.x = alien.x + dir);
                 }
             }
         }
@@ -169,7 +182,11 @@ fn main() {
         pencil.draw_text(&format!("FPS: {}", fps_counter.count()), Vec2::xy(1, 0));
 
         if state.aliens.is_empty() || state.lives == 0 {
-            let status_msg = if state.lives > 0 {"You win! :D"} else {"You lose :("};
+            let status_msg = if state.lives > 0 {
+                "You win! :D"
+            } else {
+                "You lose :("
+            };
             let msg = &format!("{}  -  score: {}", status_msg, state.score);
             pencil.set_origin(win_size / 2 - Vec2::x(msg.len() / 2));
             pencil.draw_text(msg, Vec2::zero());
@@ -177,7 +194,10 @@ fn main() {
         }
 
         pencil.set_origin((win_size - state.dimension) / 2);
-        pencil.draw_text(&format!("lives: {}  -  score: {}", state.lives, state.score), Vec2::xy(15, 0));
+        pencil.draw_text(
+            &format!("lives: {}  -  score: {}", state.lives, state.score),
+            Vec2::xy(15, 0),
+        );
         pencil.set_foreground(Color::Cyan);
         pencil.draw_char('^', state.spaceship);
         pencil.draw_char('/', state.spaceship - Vec2::x(1));
