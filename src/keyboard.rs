@@ -1,9 +1,52 @@
-use std::sync::mpsc::{self, Sender, Receiver};
+//! # Keyboard
+//!
+//! The `keyboard` module contains all implementation-related details of keyboard I/O and the
+//! key event interface.
+//!
+//! ## Example
+//!
+//! Most applications will interact with the key event interface through its
+//! [`State`](crate::app::State) object.
+//!
+//! `Pressed` and `Released` events can be retrieved by use of the [`Keyboard::last_key_events`]
+//! function while held-down keys can be obtained by the [`Keyboard::get_keys_down`] function. These
+//! can then be pattern-matched to find the type of key as in the following example:
+//!
+//! ```rust,ignore
+//! # use ruscii::app::{App, State};
+//! # use ruscii::keyboard::{Key, KeyEvent};
+//! # use ruscii::terminal::Window;
+//! #
+//! let mut app = App::new();
+//!
+//! app.run(|app_state: &mut State, window: &mut Window| {
+//!     for key_event in app_state.keyboard().last_key_events() {
+//!         match key_event {
+//!             KeyEvent::Pressed(Key::Esc) => app_state.stop(),
+//!             KeyEvent::Pressed(Key::Q) => app_state.stop(),
+//!             _ => (),
+//!         }
+//!     }
+//!
+//!     for key_down in app_state.keyboard().get_keys_down() {
+//!         match key_down {
+//!             Key::W => state.left_player.direction = -1,
+//!             Key::S => state.left_player.direction = 1,
+//!             Key::O => state.right_player.direction = -1,
+//!             Key::L => state.right_player.direction = 1,
+//!             _ => (),
+//!         }
+//!     }
+//! });
+//! ```
+
+use std::collections::hash_map::Entry;
+use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc};
+use std::sync::mpsc::{self, Receiver, Sender};
+use std::sync::Arc;
 use std::thread::{self, JoinHandle};
-use std::collections::{HashMap};
-use std::time::{Instant, Duration};
+use std::time::{Duration, Instant};
 
 use crossterm as ct;
 use device_query as dq;
@@ -11,19 +54,112 @@ use dq::DeviceQuery;
 
 const KEY_EVENT_FOCUS_DELAY_MS: u64 = 20;
 
-
+/// The keys detectable by `ruscii`.
+///
+/// A value, [`Key::Unknown`], is provided when a key is detected but the type of key cannot be
+/// ascertained.
+///
+/// ## Exceptional Behavior
+///
+/// Certain values of this enum represent _positions_ on the keyboard rather than the key type.
+/// These values might behave differently than expected when using different keyboard layouts.
+/// This includes:
+///
+/// - grave/backtick `` ` ``
+/// - minus `-`
+/// - equal `=`
+/// - left and right bracket `[]`
+/// - forward and back slash `/\ `
+/// - semicolon `;`
+/// - apostrophe `'`
+/// - comma `,`
+/// - dot `.`
+///
+/// These keys are named according to their function in a U.S. ASCII keyboard layout. Differing
+/// layouts may vary in which key event is fired.
+///
+/// A differing layout may also affect how key events are fired; certain keyboards may generate
+/// only one event by pressing two keys.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum Key {
-    Esc, Space, Enter, Backspace, CapsLock, Tab,
-    Up, Down, Left, Right,
-    Home, End, PageUp, PageDown, Insert, Delete,
-    A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
-    Num0, Num1, Num2, Num3, Num4, Num5, Num6, Num7, Num8, Num9,
-    F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12,
+    Esc,
+    Space,
+    Enter,
+    Backspace,
+    CapsLock,
+    Tab,
+    Up,
+    Down,
+    Left,
+    Right,
+    Home,
+    End,
+    PageUp,
+    PageDown,
+    Insert,
+    Delete,
+    A,
+    B,
+    C,
+    D,
+    E,
+    F,
+    G,
+    H,
+    I,
+    J,
+    K,
+    L,
+    M,
+    N,
+    O,
+    P,
+    Q,
+    R,
+    S,
+    T,
+    U,
+    V,
+    W,
+    X,
+    Y,
+    Z,
+    Num0,
+    Num1,
+    Num2,
+    Num3,
+    Num4,
+    Num5,
+    Num6,
+    Num7,
+    Num8,
+    Num9,
+    F1,
+    F2,
+    F3,
+    F4,
+    F5,
+    F6,
+    F7,
+    F8,
+    F9,
+    F10,
+    F11,
+    F12,
 
     // The following keys names represent the position of the key in a US keyboard, can vary in others keyboards.
     // Some keys may generate only one event by two key press depending the keyboard distribution.
-    Grave, Minus, Equal, LeftBracket, RightBracket, BackSlash, Semicolon, Apostrophe, Comma, Dot, Slash,
+    Grave,
+    Minus,
+    Equal,
+    LeftBracket,
+    RightBracket,
+    BackSlash,
+    Semicolon,
+    Apostrophe,
+    Comma,
+    Dot,
+    Slash,
 
     Unknown,
 }
@@ -35,6 +171,10 @@ pub enum Modifier {
 }
 */
 
+/// Events that are detected for each key.
+///
+/// May exhibit unintended behavior depending on keyboard layout. This behavior is documented
+/// in [`Key`].
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum KeyEvent {
     Pressed(Key),
@@ -42,15 +182,28 @@ pub enum KeyEvent {
 }
 
 impl KeyEvent {
+    /// If the [`KeyEvent`] is [`KeyEvent::Pressed`], returns the [`Key`] wrapped by the event and
+    /// otherwise [`None`].
     pub fn pressed(self) -> Option<Key> {
-       if let KeyEvent::Pressed(key) = self { Some(key) } else { None }
+        if let KeyEvent::Pressed(key) = self {
+            Some(key)
+        } else {
+            None
+        }
     }
 
+    /// If the [`KeyEvent`] is [`KeyEvent::Released`], returns the [`Key`] wrapped by the event and
+    /// otherwise [`None`].
     pub fn released(self) -> Option<Key> {
-       if let KeyEvent::Released(key) = self { Some(key) } else { None }
+        if let KeyEvent::Released(key) = self {
+            Some(key)
+        } else {
+            None
+        }
     }
 }
 
+/// An object representing the state of the keyboard.
 pub struct Keyboard {
     thread_running: Arc<AtomicBool>,
     acc_thread: Option<JoinHandle<()>>,
@@ -61,18 +214,21 @@ pub struct Keyboard {
     last_key_stamp: usize,
 }
 
-impl Keyboard {
-    pub fn new() -> Keyboard {
+impl Default for Keyboard {
+    fn default() -> Self {
         let thread_running = Arc::new(AtomicBool::new(true));
 
         let (acc_sender, acc_receiver): (Sender<KeyEvent>, Receiver<KeyEvent>) = mpsc::channel();
-        let (event_sender, event_receiver): (Sender<KeyEvent>, Receiver<KeyEvent>) = mpsc::channel();
+        let (event_sender, event_receiver): (Sender<KeyEvent>, Receiver<KeyEvent>) =
+            mpsc::channel();
 
         let acc_thread_running = thread_running.clone();
         let pressed_event_sender = event_sender.clone();
         let acc_thread = thread::spawn(move || {
             let mut event_accumulator: Vec<(KeyEvent, Instant)> = vec![];
-            let mut last_input_timestamp = Instant::now() - Duration::from_millis(KEY_EVENT_FOCUS_DELAY_MS + 1);
+            let mut last_input_timestamp = Instant::now()
+                .checked_sub(Duration::from_millis(KEY_EVENT_FOCUS_DELAY_MS + 1))
+                .unwrap();
             while acc_thread_running.load(Ordering::SeqCst) {
                 if let Some(timestamp) = Self::process_input_timestamp() {
                     last_input_timestamp = timestamp;
@@ -109,7 +265,7 @@ impl Keyboard {
         });
 
         let event_thread_running = thread_running.clone();
-        let released_event_sender = event_sender.clone();
+        let released_event_sender = event_sender;
         let event_thread = thread::spawn(move || {
             let device = dq::DeviceState::new();
             let mut last_device_state = Vec::new();
@@ -117,12 +273,16 @@ impl Keyboard {
                 thread::sleep(Duration::from_millis(1));
                 let new_device_state = device.get_keys();
                 Self::process_pressed_event(&acc_sender, &new_device_state, &last_device_state);
-                Self::process_released_event(&released_event_sender, &new_device_state, &last_device_state);
-                std::mem::replace(&mut last_device_state, new_device_state);
+                Self::process_released_event(
+                    &released_event_sender,
+                    &new_device_state,
+                    &last_device_state,
+                );
+                last_device_state = new_device_state;
             }
         });
 
-        Keyboard {
+        Self {
             thread_running,
             event_thread: Some(event_thread),
             acc_thread: Some(acc_thread),
@@ -132,25 +292,31 @@ impl Keyboard {
             last_key_stamp: 0,
         }
     }
+}
 
+impl Keyboard {
+    /// Retrieves all the [`KeyEvent`]s that were fired during the previous frame.
     pub fn last_key_events(&self) -> &Vec<KeyEvent> {
         &self.last_key_events
     }
 
+    /// Retrieves all the currently held down [`Key`]s.
     pub fn get_keys_down(&self) -> Vec<Key> {
         let mut keys = self.state.iter().collect::<Vec<_>>();
         keys.sort_by(|key_stamp_a, key_stamp_b| key_stamp_a.1.cmp(key_stamp_b.1));
         keys.into_iter().map(|x| *x.0).collect()
     }
 
+    /// Clears the [`KeyEvent`]s from the last frame and consumes new ones from the event
+    /// [`Receiver`].
     pub fn consume_key_events(&mut self) -> &Vec<KeyEvent> {
         self.last_key_events.clear();
         let events = self.event_receiver.try_iter().collect::<Vec<_>>();
 
         for event in &events {
             if let KeyEvent::Pressed(key) = *event {
-                if !self.state.contains_key(&key) {
-                    self.state.insert(key, self.last_key_stamp);
+                if let Entry::Vacant(entry) = self.state.entry(key) {
+                    entry.insert(self.last_key_stamp);
                     self.last_key_events.push(*event);
                     self.last_key_stamp += 1;
                 }
@@ -159,8 +325,8 @@ impl Keyboard {
 
         for event in &events {
             if let KeyEvent::Released(key) = *event {
-                if self.state.contains_key(&key) {
-                    self.state.remove(&key);
+                if let Entry::Occupied(entry) = self.state.entry(key) {
+                    entry.remove();
                     self.last_key_events.push(*event);
                 }
             }
@@ -170,16 +336,30 @@ impl Keyboard {
 
     fn process_input_timestamp() -> Option<Instant> {
         let mut input_received = false;
-        while ct::event::poll(Duration::from_millis(0)).unwrap() { //means: has the app the focus?
+        while ct::event::poll(Duration::from_millis(0)).unwrap() {
+            //means: has the app the focus?
             ct::event::read().unwrap();
             input_received = true;
         }
 
-        if input_received { Some(Instant::now()) } else { None }
+        if input_received {
+            Some(Instant::now())
+        } else {
+            None
+        }
     }
 
-    fn process_pressed_event(sender: &Sender<KeyEvent>, new_state: &Vec<dq::Keycode>, last_state: &Vec<dq::Keycode>) {
-        let pressed: Vec<dq::Keycode> = new_state.clone().into_iter().filter(|x| !last_state.contains(x)).collect();
+    fn process_pressed_event(
+        sender: &Sender<KeyEvent>,
+        new_state: &[dq::Keycode],
+        last_state: &[dq::Keycode],
+    ) {
+        let pressed: Vec<dq::Keycode> = new_state
+            .iter()
+            .cloned()
+            .filter(|x| !last_state.contains(x))
+            .collect();
+
         for keycode in pressed {
             let key = Self::transform_device_key(&keycode);
             if key != Key::Unknown {
@@ -188,8 +368,17 @@ impl Keyboard {
         }
     }
 
-    fn process_released_event(sender: &Sender<KeyEvent>, new_state: &Vec<dq::Keycode>, last_state: &Vec<dq::Keycode>) {
-        let released: Vec<dq::Keycode> = last_state.clone().into_iter().filter(|x| !new_state.contains(x)).collect();
+    fn process_released_event(
+        sender: &Sender<KeyEvent>,
+        new_state: &[dq::Keycode],
+        last_state: &[dq::Keycode],
+    ) {
+        let released: Vec<dq::Keycode> = last_state
+            .iter()
+            .cloned()
+            .filter(|x| !new_state.contains(x))
+            .collect();
+
         for keycode in released {
             let key = Self::transform_device_key(&keycode);
             if key != Key::Unknown {
@@ -198,6 +387,8 @@ impl Keyboard {
         }
     }
 
+    /// Converts a [`dq::Keycode`] to the corresponding [`Key`]. Unhandled keycodes are converted to
+    /// [`Key::Unknown`].
     fn transform_device_key(device_key: &dq::Keycode) -> Key {
         match device_key {
             dq::Keycode::Escape => Key::Esc,

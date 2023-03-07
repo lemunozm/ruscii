@@ -1,11 +1,67 @@
-use std::io::{self, Write, BufWriter};
+//! # Terminal
+//!
+//! The `terminal` module contains declarations that interact with the terminal. It provides
+//! functionality for styling text and other characters as well as implementations for drawing
+//! them through a [`Canvas`] and [`Window`].
+//!
+//! ## Examples
+//!
+//! The majority of applications do not interact with either of the [`Canvas`] or the [`Window`]
+//! directly, but instead draw to the terminal using a [`Pencil`](crate::drawing::Pencil).
+//!
+//! An example of direct use of these elements can be seen in `window.rs` from the
+//! [examples](https://github.com/lemunozm/ruscii/tree/master/examples) folder of the
+//! [`ruscii`](https://github.com/lemunozm/ruscii) repository:
+//!
+//! ```rust,no_run
+//! # use ruscii::terminal::{Window, Color, VisualElement};
+//! #
+//! fn main() {
+//!     let mut window = Window::default();
+//!     window.open();
+//!     println!("This is an open window");
+//!     std::thread::sleep(std::time::Duration::from_secs(2));
+//!
+//!     let mut default = VisualElement::default();
+//!     default.background = Color::Red;
+//!     window.canvas_mut().set_default_element(&default);
+//!     window.clear();
+//!     window.draw();
+//!     println!("With a custom background color!");
+//!
+//!     std::thread::sleep(std::time::Duration::from_secs(2));
+//!     window.close();
+//! }
+//! ```
 
-use crossterm as ct;
+use std::io::{self, BufWriter, Write};
+
 use super::spatial::Vec2;
+use crossterm as ct;
 
-// ================================================================================
-// VISUAL ELEMENT
-// ================================================================================
+/// A set of common colors and a [`Color::Xterm`] value that allows you to pass an arbitrary ANSI
+/// 8-bit color using its Xterm number (compatible with Windows 10 and most UNIX terminals).
+///
+/// # Example
+///
+/// For instance, to set a [`Pencil`](crate::drawing::Pencil)'s foreground color to Xterm color
+/// DarkCyan (`#00af87`), you would do something similar to the following:
+///
+/// ```rust,no_run
+/// # use ruscii::app::{App, State};
+/// # use ruscii::drawing::Pencil;
+/// # use ruscii::terminal::{Color, Window};
+/// #
+/// # let mut app = App::default();
+/// #
+/// # app.run(|app_state: &mut State, window: &mut Window| {
+/// let mut pencil = Pencil::new(window.canvas_mut());
+/// pencil.set_foreground(Color::Xterm(36));
+/// # });
+/// ```
+///
+/// For reference, see the
+/// [256 Colors Cheat Sheet](https://www.ditig.com/256-colors-cheat-sheet).
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum Color {
     Black,
@@ -23,6 +79,7 @@ pub enum Color {
 }
 
 impl Color {
+    /// Converts this [`Color`] to its corresponding Xterm number.
     pub fn code(&self) -> u8 {
         match *self {
             Color::Black => 16,
@@ -41,6 +98,9 @@ impl Color {
     }
 }
 
+/// The font weight.
+///
+/// Represents the boldness of text on the terminal screen.
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum Style {
     Plain,
@@ -56,6 +116,8 @@ fn style_impl(style: Style) -> ct::style::Attribute {
 }
 */
 
+/// Represents all the data needed to display a character on the terminal screen with text [`Style`]
+/// and foreground and background [`Color`].
 #[derive(Clone, Copy)]
 pub struct VisualElement {
     pub style: Style,
@@ -64,9 +126,10 @@ pub struct VisualElement {
     pub value: char,
 }
 
-impl VisualElement {
-    pub fn new() -> VisualElement {
-        VisualElement {
+impl Default for VisualElement {
+    /// Constructs a [`VisualElement`] with the default terminal styles.
+    fn default() -> Self {
+        Self {
             style: Style::Plain,
             background: Color::Black,
             foreground: Color::White,
@@ -75,9 +138,7 @@ impl VisualElement {
     }
 }
 
-// ================================================================================
-// CANVAS
-// ================================================================================
+/// An object that holds the data for a grid of [`VisualElement`]s for a single frame.
 pub struct Canvas {
     data: Vec<VisualElement>,
     dimension: Vec2,
@@ -85,6 +146,8 @@ pub struct Canvas {
 }
 
 impl Canvas {
+    /// Constructs a [`Canvas`] with the given `dimension` and each cell set to the given
+    /// [`VisualElement`] as a default.
     pub fn new(dimension: Vec2, default_element: &VisualElement) -> Canvas {
         let mut data = Vec::new();
         data.resize((dimension.x * dimension.y) as usize, *default_element);
@@ -99,6 +162,8 @@ impl Canvas {
         &self.default_element
     }
 
+    /// Sets the current [`Canvas`]'s default element, to which every cell is reset when
+    /// [`Canvas::clear`] is called.
     pub fn set_default_element(&mut self, element: &VisualElement) {
         self.default_element = *element;
     }
@@ -107,55 +172,96 @@ impl Canvas {
         self.dimension
     }
 
+    /// Checks if the point represented by the given `pos` would be within the dimensions of the
+    /// [`Canvas`].
+    ///
+    /// The dimensions are sizes while the `pos` are indices.
+    ///
+    /// ```rust
+    /// # use ruscii::spatial::Vec2;
+    /// # use ruscii::terminal::{Canvas, VisualElement};
+    /// #
+    /// let canvas = Canvas::new(Vec2::xy(10, 20), &VisualElement::default());
+    /// let a = Vec2::xy(10, 20);
+    /// let b = Vec2::xy(9, 19);
+    ///
+    /// assert!(!canvas.contains(a));
+    /// assert!(canvas.contains(b));
+    /// ```
+    ///
+    /// A [`Vec2`] with any negative components will always evaluate `false`.
+    ///
+    /// ```rust
+    /// # use ruscii::spatial::Vec2;
+    /// # use ruscii::terminal::{Canvas, VisualElement};
+    /// #
+    /// let canvas = Canvas::new(Vec2::xy(10, 20), &VisualElement::default());
+    /// let p = Vec2::xy(-1, -3);
+    ///
+    /// assert!(!canvas.contains(p));
+    /// ```
     pub fn contains(&self, pos: Vec2) -> bool {
-        0 <= pos.x && 0 <= pos.y &&
-        pos.x < self.dimension.x &&
-        pos.y < self.dimension.y
+        0 <= pos.x && 0 <= pos.y && pos.x < self.dimension.x && pos.y < self.dimension.y
     }
 
+    /// Returns a reference to the [`Canvas`] cell at the given `pos` if that `pos` is
+    /// within the [`Canvas`] dimensions, [`None`] otherwise.
     pub fn elem(&self, pos: Vec2) -> Option<&VisualElement> {
         if self.contains(pos) {
             Some(&self.data[(pos.y * self.dimension.x + pos.x) as usize])
+        } else {
+            None
         }
-        else { None }
     }
 
+    /// Returns a mutable reference to the [`Canvas`] cell at the given `pos` if that `pos` is
+    /// within the [`Canvas`] dimensions, [`None`] otherwise.
     pub fn elem_mut(&mut self, pos: Vec2) -> Option<&mut VisualElement> {
         if self.contains(pos) {
             Some(&mut self.data[(pos.y * self.dimension.x + pos.x) as usize])
+        } else {
+            None
         }
-        else { None }
     }
 
+    /// Clears all of the [`VisualElement`] cells in the grid by setting them to clones of the
+    /// default element.
     pub fn clear(&mut self) {
         self.fill(&self.default_element().clone());
     }
 
+    /// Sets every cell to the given `elem`.
     pub fn fill(&mut self, elem: &VisualElement) {
         self.data.iter_mut().map(|x| *x = *elem).count();
     }
 
+    /// Returns a reference to all the data the [`Canvas`] holds.
     pub fn data(&self) -> &Vec<VisualElement> {
         &self.data
     }
 }
 
-// ================================================================================
-// WINDOW
-// ================================================================================
+/// An object that exposes a [`Canvas`] and can write the data within it to the standard output.
 pub struct Window {
     canvas: Canvas,
     target: BufWriter<io::Stdout>,
 }
 
-impl Window {
-    pub fn new() -> Window {
-        Window {
-            canvas: Canvas::new(size(), &VisualElement::new()),
-            target: BufWriter::with_capacity(size().x as usize * size().y as usize * 50, io::stdout()),
+impl Default for Window {
+    /// Constructs a [`Window`] with the automatically detected size and the target set to the
+    /// [`io::stdout`].
+    fn default() -> Self {
+        Self {
+            canvas: Canvas::new(size(), &VisualElement::default()),
+            target: BufWriter::with_capacity(
+                size().x as usize * size().y as usize * 50,
+                io::stdout(),
+            ),
         }
     }
+}
 
+impl Window {
     pub fn canvas(&self) -> &Canvas {
         &self.canvas
     }
@@ -171,7 +277,11 @@ impl Window {
     pub fn open(&mut self) {
         ct::queue!(self.target, ct::terminal::EnterAlternateScreen).unwrap();
         ct::queue!(self.target, ct::style::ResetColor).unwrap();
-        ct::queue!(self.target, ct::style::SetAttribute(ct::style::Attribute::Reset)).unwrap();
+        ct::queue!(
+            self.target,
+            ct::style::SetAttribute(ct::style::Attribute::Reset)
+        )
+        .unwrap();
         ct::queue!(self.target, ct::cursor::Hide).unwrap();
 
         self.clean_state();
@@ -192,7 +302,11 @@ impl Window {
         self.raw_mode(false);
 
         ct::queue!(self.target, ct::cursor::Show).unwrap();
-        ct::queue!(self.target, ct::style::SetAttribute(ct::style::Attribute::Reset)).unwrap();
+        ct::queue!(
+            self.target,
+            ct::style::SetAttribute(ct::style::Attribute::Reset)
+        )
+        .unwrap();
         ct::queue!(self.target, ct::style::ResetColor).unwrap();
         ct::queue!(self.target, ct::terminal::LeaveAlternateScreen).unwrap();
 
@@ -202,8 +316,7 @@ impl Window {
     pub fn clear(&mut self) {
         if self.canvas.dimension() != size() {
             self.canvas = Canvas::new(size(), self.canvas.default_element());
-        }
-        else {
+        } else {
             self.canvas.fill(&self.canvas.default_element().clone());
         }
     }
@@ -214,7 +327,7 @@ impl Window {
         let mut last_background = self.canvas.default_element().background;
         //let mut last_style = self.canvas.default_element().style;
         let target = &mut self.target;
-        
+
         for element in self.canvas.data().iter() {
             /*
             if last_style != element.style {
@@ -242,18 +355,20 @@ impl Window {
     fn clean_state(&mut self) {
         //ct::queue!(self.target, ct::style::SetAttribute(ct::style::Attribute::NoBold)).unwrap();
 
-        let term_foreground = ct::style::Color::AnsiValue(self.canvas.default_element().foreground.code());
+        let term_foreground =
+            ct::style::Color::AnsiValue(self.canvas.default_element().foreground.code());
         ct::queue!(self.target, ct::style::SetForegroundColor(term_foreground)).unwrap();
 
-        let term_background = ct::style::Color::AnsiValue(self.canvas.default_element().background.code());
+        let term_background =
+            ct::style::Color::AnsiValue(self.canvas.default_element().background.code());
         ct::queue!(self.target, ct::style::SetBackgroundColor(term_background)).unwrap();
 
         ct::queue!(self.target, ct::cursor::MoveTo(0, 0)).unwrap();
     }
 }
 
+/// Returns the detected size of the terminal.
 pub fn size() -> Vec2 {
     let (x, y) = ct::terminal::size().unwrap();
     Vec2::xy(x, y)
 }
-

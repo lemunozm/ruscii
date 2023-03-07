@@ -1,6 +1,15 @@
-use std::ops::{Add, Sub, Mul, Div, Neg, AddAssign, SubAssign, MulAssign, DivAssign};
-use num::cast::ToPrimitive;
+//! # Spatial
+//!
+//! The `spatial` module provides the [Vec2] struct to specify positions on the terminal screen.
 
+use num::cast::ToPrimitive;
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
+
+/// Represents a two-dimensional spatial vector.
+///
+/// It is generally used as a position vector, representing a point on the `Canvas`. In the
+/// terminal, the origin is (by default) set at the top-left corner with `y` increasing downwards,
+/// i.e., counting from top to bottom.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Vec2 {
     pub x: i32,
@@ -8,22 +17,36 @@ pub struct Vec2 {
 }
 
 impl Vec2 {
+    /// Constructs a [Vec2] representing (0, 0).
     pub fn zero() -> Vec2 {
-        Vec2 {x: 0, y: 0}
+        Vec2 { x: 0, y: 0 }
     }
 
+    /// Constructs a [Vec2] with the given `x`- and `y`-coordinates.
     pub fn xy<T1: ToPrimitive, T2: ToPrimitive>(x: T1, y: T2) -> Vec2 {
-        Vec2 {x: x.to_i32().unwrap(), y: y.to_i32().unwrap()}
+        Vec2 {
+            x: x.to_i32().unwrap(),
+            y: y.to_i32().unwrap(),
+        }
     }
 
+    /// Constructs a [Vec2] with the given `x`-coordinate and a `y`-coordinate of 0.
     pub fn x<T: ToPrimitive>(x: T) -> Vec2 {
-        Vec2 {x: x.to_i32().unwrap(), y: 0}
+        Vec2 {
+            x: x.to_i32().unwrap(),
+            y: 0,
+        }
     }
 
+    /// Constructs a [Vec2] with the given `y`-coordinate and an `x`-coordinate of 0.
     pub fn y<T: ToPrimitive>(y: T) -> Vec2 {
-        Vec2 {x: 0, y: y.to_i32().unwrap()}
+        Vec2 {
+            x: 0,
+            y: y.to_i32().unwrap(),
+        }
     }
 
+    /// Sets the [Vec2] object to (0, 0).
     pub fn clear(&mut self) {
         self.x = 0;
         self.y = 0;
@@ -145,6 +168,8 @@ impl<T: ToPrimitive> DivAssign<T> for Vec2 {
     }
 }
 
+/// The relative directions in a two-dimensional coordinate system, including up, down, left,
+/// right, and none.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Direction {
     Up,
@@ -155,6 +180,9 @@ pub enum Direction {
 }
 
 impl Direction {
+    /// Converts a [Direction] to a unit-length [Vec2] in that direction.
+    ///
+    /// For [Direction::None], a zero [Vec2] is returned.
     pub fn vec2(&self) -> Vec2 {
         match *self {
             Direction::Up => Vec2::y(-1),
@@ -165,6 +193,9 @@ impl Direction {
         }
     }
 
+    /// Returns the opposite [Direction].
+    ///
+    /// For [Direction::None], [Direction::None] is provided.
     pub fn opposite(&self) -> Direction {
         match *self {
             Direction::Up => Direction::Down,
@@ -175,5 +206,3 @@ impl Direction {
         }
     }
 }
-
-
