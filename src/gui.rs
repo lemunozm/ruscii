@@ -1,24 +1,24 @@
 //! # GUI
 //!
-//! The `gui` module provides utilities for common GUI elements. Currently it includes an
-//! [FPSCounter] that provides the user easy access to the application framerate without them
+//! The `gui` module provides utilities for common GUI elements. Currently, it includes an
+//! [`FPSCounter`] that provides the user easy access to the application framerate without them
 //! needing to make any time calculations.
 //!
-//! More examples of use of the [FPSCounter] can be found in the
+//! More examples of use of the [`FPSCounter`] can be found in the
 //! [examples](https://github.com/lemunozm/ruscii/tree/master/examples) folder of the
-//! [ruscii](https://github.com/lemunozm/ruscii) repository.
+//! [`ruscii`](https://github.com/lemunozm/ruscii) repository.
 
 use std::time::SystemTime;
 
 /// A struct that provides access to the application's framerate.
 ///
-/// This FPS counter does not update automatically. [update()](FPSCounter::update) should be called
+/// This FPS counter does not update automatically. [`FPSCounter::update`] should be called
 /// to update the FPS for every frame, i.e., in the `frame_action` function parameter of
-/// [App::run](super::app::App::run).
+/// [`App::run`](super::app::App::run).
 ///
-/// The FPS value can be obtained by calling [count()](FPSCounter::count).
+/// The FPS value can be obtained by calling [`FPSCounter::count`].
 ///
-/// # Example
+/// ## Example
 ///
 /// ```rust,no_run
 /// # use ruscii::app::{App, State};
@@ -48,7 +48,7 @@ pub struct FPSCounter {
 }
 
 impl FPSCounter {
-    /// Retrieves the framerate and updates the [FPSCounter].
+    /// Retrieves the framerate and updates the [`FPSCounter`].
     pub fn update(&mut self) {
         let current_time = SystemTime::now()
             .duration_since(SystemTime::UNIX_EPOCH)

@@ -23,7 +23,7 @@ pub struct RectCharset {
 }
 
 impl RectCharset {
-    /// Returns a [RectCharset] for a single-line rectangle.
+    /// Returns a [`RectCharset`] for a single-line rectangle.
     ///
     /// # Rectangle
     ///
@@ -38,7 +38,7 @@ impl RectCharset {
         RectCharset::from("──││┌┐└┘")
     }
 
-    /// Returns a [RectCharset] for a single-line rounded-corner rectangle.
+    /// Returns a [`RectCharset`] for a single-line rounded-corner rectangle.
     ///
     /// # Rectangle
     ///
@@ -53,7 +53,7 @@ impl RectCharset {
         RectCharset::from("──││╭╮╰╯")
     }
 
-    /// Returns a [RectCharset] for a double-line rectangle.
+    /// Returns a [`RectCharset`] for a double-line rectangle.
     ///
     /// # Rectangle
     ///
@@ -70,7 +70,7 @@ impl RectCharset {
 }
 
 impl From<&str> for RectCharset {
-    /// A utility function that generates a [RectCharset] from the characters in a `&str`.
+    /// A utility function that generates a [`RectCharset`] from the characters in a `&str`.
     ///
     /// # Panics
     ///
@@ -94,22 +94,22 @@ impl From<&str> for RectCharset {
     }
 }
 
-/// An object that stores several text style options and the [Canvas] to which text and shapes can
+/// An object that stores several text style options and the [`Canvas`] to which text and shapes can
 /// be written.
 ///
 /// # Options
 ///
-/// - Origin - A [Vec2] on the [Canvas] which becomes the new "origin" for drawn characters. All
-///   [Vec2]s subsequently passed to associated functions are relative to this [Vec2]. For example,
-///   if the origin is set to (2, 3) and [draw_text()](Pencil::draw_text) is called with position
+/// - Origin - A [`Vec2`] on the [`Canvas`] which becomes the new "origin" for drawn characters. All
+///   [`Vec2`]s subsequently passed to associated functions are relative to this [`Vec2`]. For example,
+///   if the origin is set to (2, 3) and [`Pencil::draw_text`] is called with position
 ///   (1, 0), the string will be drawn at (3, 3).
-/// - Foreground (character) [Color]
-/// - Background [Color]
-/// - [Style] (boldness)
+/// - Foreground (character) [`Color`]
+/// - Background [`Color`]
+/// - [`Style`] (boldness)
 ///
 /// # Examples
 ///
-/// An introductory example using a [Pencil] could be:
+/// An introductory example using a [`Pencil`] could be:
 ///
 /// ```rust,no_run
 /// # use ruscii::app::{App, State};
@@ -130,7 +130,8 @@ impl From<&str> for RectCharset {
 /// Most associated functions return a mutable reference to the function's receiver (`self`),
 /// allowing for chaining multiple calls as in the following example.
 ///
-/// From `pong.rs`:
+/// From `pong.rs` in the [examples](https://github.com/lemunozm/ruscii/tree/master/examples)
+/// folder:
 ///
 /// ```rust,ignore
 /// Pencil::new(window.canvas_mut())
@@ -157,7 +158,7 @@ pub struct Pencil<'a> {
 }
 
 impl<'a> Pencil<'a> {
-    /// Constructs a [Pencil] that can write to the given [Canvas].
+    /// Constructs a [`Pencil`] that can write to the given [`Canvas`].
     pub fn new(canvas: &'a mut Canvas) -> Pencil {
         Pencil {
             origin: Vec2::zero(),
@@ -168,6 +169,7 @@ impl<'a> Pencil<'a> {
         }
     }
 
+    /// Sets a [`VisualElement`] cell of the [`Canvas`].
     fn draw_element(&mut self, position: Vec2, value: char) {
         if let Some(element) = self.canvas.elem_mut(position) {
             element.value = value;
@@ -181,6 +183,20 @@ impl<'a> Pencil<'a> {
         self.origin
     }
 
+    /// Returns the dimensions of the positive drawable space past the current origin.
+    ///
+    /// ## Example
+    ///
+    /// ```rust
+    /// # use ruscii::drawing::Pencil;
+    /// # use ruscii::spatial::Vec2;
+    /// # use ruscii::terminal::{Canvas, VisualElement};
+    /// #
+    /// let mut canvas = Canvas::new(Vec2::xy(10, 5), &VisualElement::default());
+    /// let mut pencil = Pencil::new(&mut canvas);
+    /// pencil.set_origin(Vec2::xy(5, 0));
+    /// assert_eq!(pencil.dimension(), Vec2::xy(5, 5))
+    /// ```
     pub fn dimension(&self) -> Vec2 {
         self.canvas.dimension() - self.origin
     }

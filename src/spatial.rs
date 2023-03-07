@@ -1,15 +1,35 @@
 //! # Spatial
 //!
-//! The `spatial` module provides the [Vec2] struct to specify positions on the terminal screen.
+//! The `spatial` module provides the [`Vec2`] struct to specify positions on the terminal screen
+//! and the [`Direction`] enum to specify and provide utility methods for relative directions.
 
 use num::cast::ToPrimitive;
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 /// Represents a two-dimensional spatial vector.
 ///
-/// It is generally used as a position vector, representing a point on the `Canvas`. In the
-/// terminal, the origin is (by default) set at the top-left corner with `y` increasing downwards,
-/// i.e., counting from top to bottom.
+/// It is generally used as a position vector, representing a point on the
+/// [`Canvas`](crate::terminal::Canvas). In the terminal, the origin is (by default) set at the
+/// top-left corner with `y` increasing downwards, i.e., counting from top to bottom.
+///
+/// At times, it is also used as a size. The differences are shown in the example below.
+///
+/// ## Example
+///
+/// ```rust
+/// # use ruscii::spatial::Vec2;
+/// # use ruscii::terminal::{Canvas, VisualElement};
+/// #
+/// let mut canvas = Canvas::new(
+///     Vec2::xy(20, 20),  // (20, 20) is used as a size here.
+///     &VisualElement::default()
+/// );
+/// let a = Vec2::xy(20, 20);  // (20, 20) is used as a position here
+/// let b = Vec2::xy(19, 19);  // and (19, 19) as a position here.
+///
+/// assert!(canvas.contains(b));  // b is a valid point on the Canvas.
+/// assert!(!canvas.contains(a));  // The bottom-right corner is actually (19, 19).
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Vec2 {
     pub x: i32,
@@ -17,12 +37,12 @@ pub struct Vec2 {
 }
 
 impl Vec2 {
-    /// Constructs a [Vec2] representing (0, 0).
+    /// Constructs a [`Vec2`] representing (0, 0).
     pub fn zero() -> Vec2 {
         Vec2 { x: 0, y: 0 }
     }
 
-    /// Constructs a [Vec2] with the given `x`- and `y`-coordinates.
+    /// Constructs a [`Vec2`] with the given `x`- and `y`-coordinates.
     pub fn xy<T1: ToPrimitive, T2: ToPrimitive>(x: T1, y: T2) -> Vec2 {
         Vec2 {
             x: x.to_i32().unwrap(),
@@ -30,7 +50,7 @@ impl Vec2 {
         }
     }
 
-    /// Constructs a [Vec2] with the given `x`-coordinate and a `y`-coordinate of 0.
+    /// Constructs a [`Vec2`] with the given `x`-coordinate and a `y`-coordinate of 0.
     pub fn x<T: ToPrimitive>(x: T) -> Vec2 {
         Vec2 {
             x: x.to_i32().unwrap(),
@@ -38,7 +58,7 @@ impl Vec2 {
         }
     }
 
-    /// Constructs a [Vec2] with the given `y`-coordinate and an `x`-coordinate of 0.
+    /// Constructs a [`Vec2`] with the given `y`-coordinate and an `x`-coordinate of 0.
     pub fn y<T: ToPrimitive>(y: T) -> Vec2 {
         Vec2 {
             x: 0,
@@ -46,7 +66,7 @@ impl Vec2 {
         }
     }
 
-    /// Sets the [Vec2] object to (0, 0).
+    /// Sets the [`Vec2`] object to (0, 0).
     pub fn clear(&mut self) {
         self.x = 0;
         self.y = 0;
@@ -180,9 +200,9 @@ pub enum Direction {
 }
 
 impl Direction {
-    /// Converts a [Direction] to a unit-length [Vec2] in that direction.
+    /// Converts a [`Direction`] to a unit-length [`Vec2`] in that direction.
     ///
-    /// For [Direction::None], a zero [Vec2] is returned.
+    /// For [`Direction::None`], a zero [`Vec2`] is returned.
     pub fn vec2(&self) -> Vec2 {
         match *self {
             Direction::Up => Vec2::y(-1),
@@ -193,9 +213,9 @@ impl Direction {
         }
     }
 
-    /// Returns the opposite [Direction].
+    /// Returns the opposite [`Direction`].
     ///
-    /// For [Direction::None], [Direction::None] is provided.
+    /// For [`Direction::None`], [`Direction::None`] is returned.
     pub fn opposite(&self) -> Direction {
         match *self {
             Direction::Up => Direction::Down,
