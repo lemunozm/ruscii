@@ -138,7 +138,7 @@ impl Default for VisualElement {
     }
 }
 
-/// An object that holds the data for a grid of [`VisualElements`] for a single frame.
+/// An object that holds the data for a grid of [`VisualElement`]s for a single frame.
 pub struct Canvas {
     data: Vec<VisualElement>,
     dimension: Vec2,

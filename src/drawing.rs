@@ -29,7 +29,7 @@ impl RectCharset {
     ///
     /// Using this charset will provide a rectangle that looks like this:
     ///
-    /// ```ignore
+    /// ```text
     /// ┌──────┐
     /// │ruscii│
     /// └──────┘
@@ -44,7 +44,7 @@ impl RectCharset {
     ///
     /// Using this charset will provide a rectangle that looks like this:
     ///
-    /// ```ignore
+    /// ```text
     /// ╭──────╮
     /// │ruscii│
     /// ╰──────╯
@@ -59,7 +59,7 @@ impl RectCharset {
     ///
     /// Using this charset will provide a rectangle that looks like this:
     ///
-    /// ```ignore
+    /// ```text
     /// ╔══════╗
     /// ║ruscii║
     /// ╚══════╝

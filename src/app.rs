@@ -77,8 +77,8 @@ impl State {
 
 /// The essential parts of the application, containing its [`Config`], [`State`], and [`Window`].
 ///
-/// [`App`] objects are created with a default maximum framerate of 30 using [`App::new`]. To change
-/// this, pass a [`Config`] object with the desired framerate using [`App::config`].
+/// [`App`] objects are created with a default maximum framerate of 30 using [`App::default`].
+/// To change this, pass a [`Config`] object with the desired framerate using [`App::config`].
 #[derive(Default)]
 pub struct App {
     config: Config,
@@ -103,7 +103,7 @@ impl App {
     /// Begins running the terminal application.
     ///
     /// This function begins a loop where key events are first registered, the window is cleared,
-    /// `frame_action` is called adding characters to the [`Canvas`], and the window is redrawn.
+    /// `frame_action` is called adding characters to the `Canvas`, and the window is redrawn.
     ///
     /// If the time it takes to execute all of these is less than the [`App`] expects according to
     /// the framerate set in the [`Config`], the current thread is put to sleep until the next
