@@ -61,3 +61,7 @@ jobs:
       if: matrix.rust == 'stable'
       run: cargo package
       continue-on-error: ${{ matrix.can-fail }}
+    - name: Check docs
+      if: matrix.rust == 'stable'
+      run: cargo docs
+      continue-on-error: ${{ matrix.can-fail }}

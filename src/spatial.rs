@@ -7,7 +7,7 @@ use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssi
 
 /// Represents a two-dimensional spatial vector.
 ///
-/// It is generally used as a position vector, representing a point on the [Canvas]. In the
+/// It is generally used as a position vector, representing a point on the `Canvas`. In the
 /// terminal, the origin is (by default) set at the top-left corner with `y` increasing downwards,
 /// i.e., counting from top to bottom.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
