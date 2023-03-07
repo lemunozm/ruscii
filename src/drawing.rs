@@ -11,7 +11,7 @@ use num::cast::ToPrimitive;
 /// The set of all characters needed to draw all edges and corners of a variable-length rectangle
 /// in the terminal.
 #[derive(Debug, Clone)]
-pub struct RectCharset {
+pub struct Rectrset {
     pub top: char,
     pub bottom: char,
     pub left: char,
