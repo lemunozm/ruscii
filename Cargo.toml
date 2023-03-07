@@ -1,6 +1,6 @@
 [package]
 name = "ruscii"
-version = "0.3.2"
+version = "0.4.0"
 authors = ["Luis Enrique Muñoz Martín <lemunozm@gmail.com>"]
 edition = "2018"
 readme = "README.md"

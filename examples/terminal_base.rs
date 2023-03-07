@@ -6,7 +6,7 @@ use ruscii::spatial::Vec2;
 use ruscii::terminal::Window;
 
 fn main() {
-    let mut fps_counter = FPSCounter::new();
+    let mut fps_counter = FPSCounter::default();
     let mut app = App::config(Config::new().fps(std::u32::MAX));
 
     app.run(|app_state: &mut State, window: &mut Window| {

@@ -29,7 +29,7 @@ impl GameState {
 fn main() {
     let mut app = App::config(Config::new().fps(20));
     let size = app.window().size();
-    let mut fps_counter = FPSCounter::new();
+    let mut fps_counter = FPSCounter::default();
     let mut state = GameState {
         player_pos: size / 4,
         player_move: Vec2::xy(1, 0),
