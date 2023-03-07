@@ -1,6 +1,7 @@
 [![lancat](https://img.shields.io/crates/v/ruscii)](https://crates.io/crates/ruscii)
 [![license](https://img.shields.io/crates/l/ruscii)](https://www.apache.org/licenses/LICENSE-2.0.txt)
 [![downloads](https://img.shields.io/crates/d/ruscii)](https://crates.io/crates/ruscii)
+[![docs](https://img.shields.io/docsrs/ruscii)](https://docs.rs/ruscii/latest/ruscii/)
 
 # `ruscii`
 
@@ -16,7 +17,7 @@ Any contribution, issue, or pull request would be greatly appreciated!
 - Multiplatform (Linux, Windows and macOS)
     - For Linux, it is required to have a x11 server (most distributions come with one included).
       Internally, `ruscii` uses it to create transparent key-pressed and key-released events.
-- Support for multiple terminals (See 
+- Support for multiple terminals (See
   [Crossterm's terminal support](https://github.com/crossterm-rs/crossterm#tested-terminals))
 - Provides key press and release events in terminal (essential for games!)
 - Simplistic API - make your terminal-based game in relatively few lines!
