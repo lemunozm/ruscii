@@ -1,3 +1,45 @@
+//! # Keyboard
+//!
+//! The `keyboard` module contains all implementation-related details of keyboard I/O and the
+//! key event interface.
+//!
+//! ## Example
+//!
+//! Most applications will interact with the key event interface through its
+//! [`State`](crate::app::State) object.
+//!
+//! `Pressed` and `Released` events can be retrieved by use of the [`Keyboard::last_key_events`]
+//! function while held-down keys can be obtained by the [`Keyboard::get_keys_down`] function. These
+//! can then be pattern-matched to find the type of key as in the following example:
+//!
+//! ```rust,ignore
+//! # use ruscii::app::{App, State};
+//! # use ruscii::keyboard::{Key, KeyEvent};
+//! # use ruscii::terminal::Window;
+//! #
+//! let mut app = App::new();
+//!
+//! app.run(|app_state: &mut State, window: &mut Window| {
+//!     for key_event in app_state.keyboard().last_key_events() {
+//!         match key_event {
+//!             KeyEvent::Pressed(Key::Esc) => app_state.stop(),
+//!             KeyEvent::Pressed(Key::Q) => app_state.stop(),
+//!             _ => (),
+//!         }
+//!     }
+//!
+//!     for key_down in app_state.keyboard().get_keys_down() {
+//!         match key_down {
+//!             Key::W => state.left_player.direction = -1,
+//!             Key::S => state.left_player.direction = 1,
+//!             Key::O => state.right_player.direction = -1,
+//!             Key::L => state.right_player.direction = 1,
+//!             _ => (),
+//!         }
+//!     }
+//! });
+//! ```
+
 use std::sync::mpsc::{self, Sender, Receiver};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc};
@@ -11,7 +53,32 @@ use dq::DeviceQuery;
 
 const KEY_EVENT_FOCUS_DELAY_MS: u64 = 20;
 
-
+/// The keys detectable by `ruscii`.
+///
+/// A value, [`Key::Unknown`], is provided when a key is detected but the type of key cannot be
+/// ascertained.
+///
+/// ## Exceptional Behavior
+///
+/// Certain values of this enum represent _positions_ on the keyboard rather than the key type.
+/// These values might behave differently than expected when using different keyboard layouts.
+/// This includes:
+///
+/// - grave/backtick `` ` ``
+/// - minus `-`
+/// - equal `=`
+/// - left and right bracket `[]`
+/// - forward and back slash `/\ `
+/// - semicolon `;`
+/// - apostrophe `'`
+/// - comma `,`
+/// - dot `.`
+///
+/// These keys are named according to their function in a U.S. ASCII keyboard layout. Differing
+/// layouts may vary in which key event is fired.
+///
+/// A differing layout may also affect how key events are fired; certain keyboards may generate
+/// only one event by pressing two keys.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum Key {
     Esc, Space, Enter, Backspace, CapsLock, Tab,
@@ -35,6 +102,10 @@ pub enum Modifier {
 }
 */
 
+/// Events that are detected for each key.
+///
+/// May exhibit unintended behavior depending on keyboard layout. This behavior is documented
+/// in [`Key`].
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum KeyEvent {
     Pressed(Key),
@@ -42,15 +113,20 @@ pub enum KeyEvent {
 }
 
 impl KeyEvent {
+    /// If the [`KeyEvent`] is [`KeyEvent::Pressed`], returns the [`Key`] wrapped by the event and
+    /// otherwise [`None`].
     pub fn pressed(self) -> Option<Key> {
        if let KeyEvent::Pressed(key) = self { Some(key) } else { None }
     }
 
+    /// If the [`KeyEvent`] is [`KeyEvent::Released`], returns the [`Key`] wrapped by the event and
+    /// otherwise [`None`].
     pub fn released(self) -> Option<Key> {
        if let KeyEvent::Released(key) = self { Some(key) } else { None }
     }
 }
 
+/// An object representing the state of the keyboard.
 pub struct Keyboard {
     thread_running: Arc<AtomicBool>,
     acc_thread: Option<JoinHandle<()>>,
@@ -133,16 +209,20 @@ impl Keyboard {
         }
     }
 
+    /// Retrieves all the [`KeyEvents`] that were fired during the previous frame.
     pub fn last_key_events(&self) -> &Vec<KeyEvent> {
         &self.last_key_events
     }
 
+    /// Retrieves all the currently held down [`Key`]s.
     pub fn get_keys_down(&self) -> Vec<Key> {
         let mut keys = self.state.iter().collect::<Vec<_>>();
         keys.sort_by(|key_stamp_a, key_stamp_b| key_stamp_a.1.cmp(key_stamp_b.1));
         keys.into_iter().map(|x| *x.0).collect()
     }
 
+    /// Clears the [`KeyEvents`] from the last frame and consumes new ones from the event
+    /// [`Receiver`].
     pub fn consume_key_events(&mut self) -> &Vec<KeyEvent> {
         self.last_key_events.clear();
         let events = self.event_receiver.try_iter().collect::<Vec<_>>();
@@ -198,6 +278,8 @@ impl Keyboard {
         }
     }
 
+    /// Converts a [`dq::Keycode`] to the corresponding [`Key`]. Unhandled keycodes are converted to
+    /// [`Key::Unknown`].
     fn transform_device_key(device_key: &dq::Keycode) -> Key {
         match device_key {
             dq::Keycode::Escape => Key::Esc,

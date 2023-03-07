@@ -1,3 +1,8 @@
+//! # App
+//!
+//! The `app` module provides functionality related to application itself, including its
+//! framerate, the keyboard, and its execution.
+
 use super::keyboard::{Keyboard};
 use super::terminal::{Window};
 
@@ -7,22 +12,27 @@ use std::{thread, time, panic};
 
 use std::io::{self, BufRead};
 
+/// Contains the [`App`] configuration settings, currently including only the framerate.
 pub struct Config {
     pub fps: u32,
 }
 
 impl Config {
+    /// Constructs a new [`Config`] with a default maximum framerate of 30.
     pub fn new() -> Config {
-        Config {fps: 30}
+        Config { fps: 30 }
     }
 
+    /// Consumes the receiver [`Config`] and returns a new one with the maximum framerate to the
+    /// given `fps`.
     pub fn fps(mut self, fps: u32) -> Config {
         self.fps = fps;
         self
     }
 }
 
-
+/// Contains the run state of the the [`App`] and the [`Keyboard`] through [`State::keyboard`] for
+/// the key event interface.
 pub struct State {
     running: Arc<AtomicBool>,
     keyboard: Keyboard,
@@ -49,9 +59,11 @@ impl State {
     }
 
     pub fn is_running(&self) -> bool {
-       self.running.load(Ordering::SeqCst)
+        self.running.load(Ordering::SeqCst)
     }
 
+    /// Returns the [`Keyboard`]. For more information on how to access keyboard input, see
+    /// documentation for the [keyboard](crate::keyboard) module.
     pub fn keyboard(&self) -> &Keyboard {
         &self.keyboard
     }
@@ -65,6 +77,10 @@ impl State {
     }
 }
 
+/// The essential parts of the application, containing its [`Config`], [`State`], and [`Window`].
+///
+/// [`App`] objects are created with a default maximum framerate of 30 using [`App::new`]. To change
+/// this, pass a [`Config`] object with the desired framerate using [`App::config`].
 pub struct App {
     config: Config,
     state: State,
@@ -72,6 +88,7 @@ pub struct App {
 }
 
 impl App {
+    /// Constructs an [`App`] with a new [`Config`], [`State`], and [`Window`].
     pub fn new() -> App {
         App {
             config: Config::new(),
@@ -80,6 +97,7 @@ impl App {
         }
     }
 
+    /// Constructs an [`App`] with the given [`Config`].
     pub fn config(config: Config) -> App {
         App {
             config,
@@ -92,15 +110,24 @@ impl App {
         &self.window
     }
 
+    /// Begins running the terminal application.
+    ///
+    /// This function begins a loop where key events are first registered, the window is cleared,
+    /// `frame_action` is called adding characters to the [`Canvas`], and the window is redrawn.
+    ///
+    /// If the time it takes to execute all of these is less than the [`App`] expects according to
+    /// the framerate set in the [`Config`], the current thread is put to sleep until the next
+    /// frame, thereby limiting FPS.
+    ///
+    /// Catches all unwinding panics that occur within `frame_action`, allowing terminal recovery.
     pub fn run<F>(&mut self, mut frame_action: F)
-    where F: FnMut(&mut State, &mut Window) {
+        where F: FnMut(&mut State, &mut Window) {
         let expected_duration = time::Duration::from_nanos(1_000_000_000 / self.config.fps as u64);
         self.state.run();
 
-        let result = panic::catch_unwind(panic::AssertUnwindSafe(||{
+        let result = panic::catch_unwind(panic::AssertUnwindSafe(|| {
             self.window.open();
             while self.state.is_running() {
-
                 let now = time::Instant::now();
                 self.window.clear();
 
