@@ -3,6 +3,11 @@
 //! The `spatial` module provides the [`Vec2`] struct to specify positions on the terminal screen
 //! and the [`Direction`] enum to specify and provide utility methods for relative directions.
 
+use std::cmp::Ordering;
+use std::convert::TryFrom;
+use std::error::Error;
+use std::fmt;
+use std::fmt::Formatter;
 use num::cast::ToPrimitive;
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
@@ -226,3 +231,32 @@ impl Direction {
         }
     }
 }
+
+impl TryFrom<Vec2> for Direction {
+    type Error = TryFromVec2Error;
+
+    fn try_from(value: Vec2) -> Result<Self, Self::Error> {
+        match (value.x.cmp(&0), value.y.cmp(&0)) {
+            (Ordering::Less, Ordering::Equal) => Ok(Direction::Left),
+            (Ordering::Greater, Ordering::Equal) => Ok(Direction::Right),
+            (Ordering::Equal, Ordering::Less) => Ok(Direction::Down),
+            (Ordering::Equal, Ordering::Greater) => Ok(Direction::Up),
+            (Ordering::Equal, Ordering::Equal) => Ok(Direction::None),
+            _ => Err(TryFromVec2Error { value }),
+        }
+    }
+}
+
+#[derive(Debug)]
+struct TryFromVec2Error {
+    value: Vec2,
+}
+
+impl fmt::Display for TryFromVec2Error {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "Displacement vector ({}, {}) is not orthogonal and thus cannot be converted to a direction.",
+               self.value.x, self.value.y)
+    }
+}
+
+impl Error for TryFromVec2Error {}
