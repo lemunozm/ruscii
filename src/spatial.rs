@@ -193,6 +193,35 @@ impl<T: ToPrimitive> DivAssign<T> for Vec2 {
     }
 }
 
+impl From<Direction> for Vec2 {
+    /// Converts a [`Direction`] to a unit-length [`Vec2`] in that direction.
+    ///
+    /// Because terminal coordinates begin at the top line, vertical directions are inverted
+    /// compared to what you may expect. More information in the example. For [`Direction::None`], a
+    /// zero [`Vec2`] is returned.
+    ///
+    /// ## Example
+    ///
+    /// ```rust
+    /// # use ruscii::spatial::{Direction, Vec2};
+    /// #
+    /// let up = Vec2::from(Direction::Up);
+    /// let down = Vec2::from(Direction::Down);
+    ///
+    /// assert_eq!(up, Vec2::y(-1));
+    /// assert_eq!(down, Vec2::y(1));
+    /// ```
+    fn from(value: Direction) -> Self {
+        match value {
+            Direction::Up => Vec2::y(-1),
+            Direction::Down => Vec2::y(1),
+            Direction::Right => Vec2::x(1),
+            Direction::Left => Vec2::x(-1),
+            Direction::None => Vec2::zero(),
+        }
+    }
+}
+
 /// The relative directions in a two-dimensional coordinate system, including up, down, left,
 /// right, and none.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -205,19 +234,6 @@ pub enum Direction {
 }
 
 impl Direction {
-    /// Converts a [`Direction`] to a unit-length [`Vec2`] in that direction.
-    ///
-    /// For [`Direction::None`], a zero [`Vec2`] is returned.
-    pub fn vec2(&self) -> Vec2 {
-        match *self {
-            Direction::Up => Vec2::y(-1),
-            Direction::Down => Vec2::y(1),
-            Direction::Right => Vec2::x(1),
-            Direction::Left => Vec2::x(-1),
-            Direction::None => Vec2::zero(),
-        }
-    }
-
     /// Returns the opposite [`Direction`].
     ///
     /// For [`Direction::None`], [`Direction::None`] is returned.
@@ -235,7 +251,7 @@ impl Direction {
 impl TryFrom<Vec2> for Direction {
     type Error = TryFromVec2Error;
 
-    fn try_from(value: Vec2) -> Result<Self, Self::Error> {
+     fn try_from(value: Vec2) -> Result<Self, Self::Error> {
         match (value.x.cmp(&0), value.y.cmp(&0)) {
             (Ordering::Less, Ordering::Equal) => Ok(Direction::Left),
             (Ordering::Greater, Ordering::Equal) => Ok(Direction::Right),
@@ -248,7 +264,7 @@ impl TryFrom<Vec2> for Direction {
 }
 
 #[derive(Debug)]
-struct TryFromVec2Error {
+pub struct TryFromVec2Error {
     value: Vec2,
 }
 
