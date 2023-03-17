@@ -202,6 +202,9 @@ impl From<Direction> for Vec2 {
     ///
     /// ## Example
     ///
+    /// In the terminal, `y` increases going downward from the top. Therefore, [`Direction::Up`]
+    /// is a negative vector and [`Direction::Down`] is a positive vector.
+    ///
     /// ```rust
     /// # use ruscii::spatial::{Direction, Vec2};
     /// #
@@ -251,12 +254,47 @@ impl Direction {
 impl TryFrom<Vec2> for Direction {
     type Error = TryFromVec2Error;
 
-     fn try_from(value: Vec2) -> Result<Self, Self::Error> {
+    /// Converts a [`Vec2`] to a [`Direction`].
+    ///
+    /// Because terminal coordinates begin at the top line, vertical directions are inverted
+    /// compared to what you may expect. For more information, see the example.
+    ///
+    /// ## Errors
+    ///
+    /// If the given `value` is not orthogonal, i.e., one of the components is not zero,
+    /// [`TryFromVec2Error`] is returned.
+    ///
+    /// ## Examples
+    ///
+    /// In the terminal, `y` increases going downward from the top. Therefore, [`Direction::Up`]
+    /// is a negative vector and [`Direction::Down`] is a positive vector.
+    ///
+    /// ```rust
+    /// # use std::convert::TryFrom;
+    /// # use ruscii::spatial::{Direction, Vec2};
+    /// #
+    /// let negative_y = Direction::try_from(Vec2::y(-1)).unwrap();
+    /// let positive_y = Direction::try_from(Vec2::y(1)).unwrap();
+    ///
+    /// assert_eq!(negative_y, Direction::Up);
+    /// assert_eq!(positive_y, Direction::Down);
+    /// ```
+    ///
+    /// Passing non-orthogonal vectors, that is, vectors that are neither parallel to the `x`- or
+    /// `y`-axis will result in an error.
+    ///
+    /// ```rust,should_panic
+    /// # use std::convert::TryFrom;
+    /// # use ruscii::spatial::{Direction, Vec2};
+    /// #
+    /// Direction::try_from(Vec2::xy(1, 1)).unwrap();  // panics!
+    /// ```
+    fn try_from(value: Vec2) -> Result<Self, Self::Error> {
         match (value.x.cmp(&0), value.y.cmp(&0)) {
             (Ordering::Less, Ordering::Equal) => Ok(Direction::Left),
             (Ordering::Greater, Ordering::Equal) => Ok(Direction::Right),
-            (Ordering::Equal, Ordering::Less) => Ok(Direction::Down),
-            (Ordering::Equal, Ordering::Greater) => Ok(Direction::Up),
+            (Ordering::Equal, Ordering::Greater) => Ok(Direction::Down),
+            (Ordering::Equal, Ordering::Less) => Ok(Direction::Up),
             (Ordering::Equal, Ordering::Equal) => Ok(Direction::None),
             _ => Err(TryFromVec2Error { value }),
         }
@@ -270,8 +308,7 @@ pub struct TryFromVec2Error {
 
 impl fmt::Display for TryFromVec2Error {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "Displacement vector ({}, {}) is not orthogonal and thus cannot be converted to a direction.",
-               self.value.x, self.value.y)
+        write!(f, "displacement vector ({}, {}) is not orthogonal", self.value.x, self.value.y)
     }
 }
 
