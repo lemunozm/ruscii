@@ -3,12 +3,12 @@
 //! The `spatial` module provides the [`Vec2`] struct to specify positions on the terminal screen
 //! and the [`Direction`] enum to specify and provide utility methods for relative directions.
 
+use num::cast::ToPrimitive;
 use std::cmp::Ordering;
 use std::convert::TryFrom;
 use std::error::Error;
 use std::fmt;
 use std::fmt::Formatter;
-use num::cast::ToPrimitive;
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 /// Represents a two-dimensional spatial vector.
@@ -308,7 +308,11 @@ pub struct TryFromVec2Error {
 
 impl fmt::Display for TryFromVec2Error {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "displacement vector ({}, {}) is not orthogonal", self.value.x, self.value.y)
+        write!(
+            f,
+            "displacement vector ({}, {}) is not orthogonal",
+            self.value.x, self.value.y
+        )
     }
 }
 
