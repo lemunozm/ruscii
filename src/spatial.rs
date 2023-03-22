@@ -8,7 +8,7 @@ use std::cmp::Ordering;
 use std::convert::TryFrom;
 use std::error::Error;
 use std::fmt;
-use std::fmt::Formatter;
+use std::fmt::{Display, Formatter};
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 /// Represents a two-dimensional spatial vector.
@@ -75,6 +75,12 @@ impl Vec2 {
     pub fn clear(&mut self) {
         self.x = 0;
         self.y = 0;
+    }
+}
+
+impl Display for Vec2 {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "({}, {})", self.x, self.y)
     }
 }
 
