@@ -360,4 +360,49 @@ impl<'a> Pencil<'a> {
         }
         self.move_origin(-position)
     }
+
+    /// Draws one of the frames of the given `animation` based on the number of times this has
+    /// been previously called.
+    pub fn draw_animation_frame(
+        &mut self,
+        animation: &mut Animation,
+        position: Vec2,
+    ) {
+        self.draw_text(animation.access_frame(), position);
+    }
+}
+
+/// An object that stores the frames of an animation.
+pub struct Animation {
+    frames: Vec<String>,
+    rate: i32,
+    current_frame: usize,
+    counter: i32,
+}
+
+impl Animation {
+    /// Creates a new [`Animation`] with the given `frames` and with `rate` number of frames
+    /// displayed per animation frame.
+    pub fn new(frames: Vec<&str>, rate: i32) -> Animation {
+        let frames = frames
+            .into_iter()
+            .map(str::to_string)
+            .collect();
+        Animation { frames, rate, current_frame: 0, counter: 0 }
+    }
+
+    fn access_frame(&mut self) -> &str {
+        let out = &self.frames[self.current_frame];
+
+        self.counter += 1;
+        if self.counter >= self.rate {
+            self.counter = 0;
+            self.current_frame += 1;
+        }
+        if self.current_frame >= self.frames.len() {
+            self.current_frame = 0;
+        }
+
+        out
+    }
 }
