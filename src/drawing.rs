@@ -272,6 +272,14 @@ impl<'a> Pencil<'a> {
         self.draw_text(text, position)
     }
 
+    /// Draws a right-aligned string ending at the given `position`.
+    ///
+    /// Returns the receiver for chaining.
+    pub fn draw_right_aligned_text(&mut self, text: &str, position: Vec2) -> &mut Pencil<'a> {
+        let position = position - Vec2::x(text.len() as i32);
+        self.draw_text(text, position)
+    }
+
     /// Draws a vertical line starting from the given `position` and extending for `size`
     /// lines downwards. This line is composed of the given `value` characters.
     ///

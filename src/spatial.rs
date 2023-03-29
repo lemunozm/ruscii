@@ -4,6 +4,11 @@
 //! and the [`Direction`] enum to specify and provide utility methods for relative directions.
 
 use num::cast::ToPrimitive;
+use std::cmp::Ordering;
+use std::convert::TryFrom;
+use std::error::Error;
+use std::fmt;
+use std::fmt::{Display, Formatter};
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 /// Represents a two-dimensional spatial vector.
@@ -70,6 +75,12 @@ impl Vec2 {
     pub fn clear(&mut self) {
         self.x = 0;
         self.y = 0;
+    }
+}
+
+impl Display for Vec2 {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "({}, {})", self.x, self.y)
     }
 }
 
@@ -188,6 +199,38 @@ impl<T: ToPrimitive> DivAssign<T> for Vec2 {
     }
 }
 
+impl From<Direction> for Vec2 {
+    /// Converts a [`Direction`] to a unit-length [`Vec2`] in that direction.
+    ///
+    /// Because terminal coordinates begin at the top line, vertical directions are inverted
+    /// compared to what you may expect. More information in the example. For [`Direction::None`], a
+    /// zero [`Vec2`] is returned.
+    ///
+    /// ## Example
+    ///
+    /// In the terminal, `y` increases going downward from the top. Therefore, [`Direction::Up`]
+    /// is a negative vector and [`Direction::Down`] is a positive vector.
+    ///
+    /// ```rust
+    /// # use ruscii::spatial::{Direction, Vec2};
+    /// #
+    /// let up = Vec2::from(Direction::Up);
+    /// let down = Vec2::from(Direction::Down);
+    ///
+    /// assert_eq!(up, Vec2::y(-1));
+    /// assert_eq!(down, Vec2::y(1));
+    /// ```
+    fn from(value: Direction) -> Self {
+        match value {
+            Direction::Up => Vec2::y(-1),
+            Direction::Down => Vec2::y(1),
+            Direction::Right => Vec2::x(1),
+            Direction::Left => Vec2::x(-1),
+            Direction::None => Vec2::zero(),
+        }
+    }
+}
+
 /// The relative directions in a two-dimensional coordinate system, including up, down, left,
 /// right, and none.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -200,19 +243,6 @@ pub enum Direction {
 }
 
 impl Direction {
-    /// Converts a [`Direction`] to a unit-length [`Vec2`] in that direction.
-    ///
-    /// For [`Direction::None`], a zero [`Vec2`] is returned.
-    pub fn vec2(&self) -> Vec2 {
-        match *self {
-            Direction::Up => Vec2::y(-1),
-            Direction::Down => Vec2::y(1),
-            Direction::Right => Vec2::x(1),
-            Direction::Left => Vec2::x(-1),
-            Direction::None => Vec2::zero(),
-        }
-    }
-
     /// Returns the opposite [`Direction`].
     ///
     /// For [`Direction::None`], [`Direction::None`] is returned.
@@ -226,3 +256,70 @@ impl Direction {
         }
     }
 }
+
+impl TryFrom<Vec2> for Direction {
+    type Error = TryFromVec2Error;
+
+    /// Converts a [`Vec2`] to a [`Direction`].
+    ///
+    /// Because terminal coordinates begin at the top line, vertical directions are inverted
+    /// compared to what you may expect. For more information, see the example.
+    ///
+    /// ## Errors
+    ///
+    /// If the given `value` is not orthogonal, i.e., one of the components is not zero,
+    /// [`TryFromVec2Error`] is returned.
+    ///
+    /// ## Examples
+    ///
+    /// In the terminal, `y` increases going downward from the top. Therefore, [`Direction::Up`]
+    /// is a negative vector and [`Direction::Down`] is a positive vector.
+    ///
+    /// ```rust
+    /// # use std::convert::TryFrom;
+    /// # use ruscii::spatial::{Direction, Vec2};
+    /// #
+    /// let negative_y = Direction::try_from(Vec2::y(-1)).unwrap();
+    /// let positive_y = Direction::try_from(Vec2::y(1)).unwrap();
+    ///
+    /// assert_eq!(negative_y, Direction::Up);
+    /// assert_eq!(positive_y, Direction::Down);
+    /// ```
+    ///
+    /// Passing non-orthogonal vectors, that is, vectors that are neither parallel to the `x`- or
+    /// `y`-axis will result in an error.
+    ///
+    /// ```rust,should_panic
+    /// # use std::convert::TryFrom;
+    /// # use ruscii::spatial::{Direction, Vec2};
+    /// #
+    /// Direction::try_from(Vec2::xy(1, 1)).unwrap();  // panics!
+    /// ```
+    fn try_from(value: Vec2) -> Result<Self, Self::Error> {
+        match (value.x.cmp(&0), value.y.cmp(&0)) {
+            (Ordering::Less, Ordering::Equal) => Ok(Direction::Left),
+            (Ordering::Greater, Ordering::Equal) => Ok(Direction::Right),
+            (Ordering::Equal, Ordering::Greater) => Ok(Direction::Down),
+            (Ordering::Equal, Ordering::Less) => Ok(Direction::Up),
+            (Ordering::Equal, Ordering::Equal) => Ok(Direction::None),
+            _ => Err(TryFromVec2Error { value }),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct TryFromVec2Error {
+    value: Vec2,
+}
+
+impl fmt::Display for TryFromVec2Error {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "displacement vector ({}, {}) is not orthogonal",
+            self.value.x, self.value.y
+        )
+    }
+}
+
+impl Error for TryFromVec2Error {}
