@@ -136,8 +136,6 @@ impl App {
         }));
 
         if result.is_err() {
-            // println!("\n\n[Press 'enter' to recover the terminal]");
-            // io::stdin().lock().lines().next().unwrap().unwrap();
             self.window.close();
         }
     }
