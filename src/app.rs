@@ -10,8 +10,6 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::{panic, thread, time};
 
-use std::io::{self, BufRead};
-
 /// Contains the [`App`] configuration settings, currently including only the framerate.
 pub struct Config {
     pub fps: u32,
@@ -138,8 +136,8 @@ impl App {
         }));
 
         if result.is_err() {
-            println!("\n\n[Press 'enter' to recover the terminal]");
-            io::stdin().lock().lines().next().unwrap().unwrap();
+            // println!("\n\n[Press 'enter' to recover the terminal]");
+            // io::stdin().lock().lines().next().unwrap().unwrap();
             self.window.close();
         }
     }
