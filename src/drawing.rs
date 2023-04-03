@@ -397,7 +397,7 @@ impl Animation {
         self.counter += 1;
         if self.counter >= self.rate {
             self.counter = 0;
-            self.current_frame += 1;
+            self.current_frame = (self.current_frame + 1) % self.frames.len();
         }
         if self.current_frame >= self.frames.len() {
             self.current_frame = 0;
