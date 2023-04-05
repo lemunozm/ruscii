@@ -5,6 +5,7 @@
 
 use super::spatial::Vec2;
 use super::terminal::{Canvas, Color, Style};
+use std::fmt::{Display, Formatter};
 
 use num::cast::ToPrimitive;
 
@@ -361,48 +362,64 @@ impl<'a> Pencil<'a> {
         self.move_origin(-position)
     }
 
-    /// Draws one of the frames of the given `animation` based on the number of times this has
+    /// Draws one of the frames of the given `animator` based on the number of times this has
     /// been previously called.
-    pub fn draw_animation_frame(
-        &mut self,
-        animation: &mut Animation,
-        position: Vec2,
-    ) {
-        self.draw_text(animation.access_frame(), position);
+    pub fn draw_animator(&mut self, animator: &mut Animator, position: Vec2) {
+        self.draw_text(&animator.access_frame(), position);
     }
 }
 
-/// An object that stores the frames of an animation.
-pub struct Animation {
-    frames: Vec<String>,
-    rate: i32,
-    current_frame: usize,
+/// An object that runs an [`Animation`].
+pub struct Animator {
+    animation: Vec<AnimationFrame>,
+    frame_index: usize,
     counter: i32,
 }
 
-impl Animation {
-    /// Creates a new [`Animation`] with the given `frames` and with `rate` number of frames
+impl Animator {
+    /// Creates a new [`Animator`] with the given `frames` and with `rate` number of frames
     /// displayed per animation frame.
-    pub fn new(frames: Vec<&str>, rate: i32) -> Animation {
-        let frames = frames
-            .into_iter()
-            .map(str::to_string)
-            .collect();
-        Animation { frames, rate, current_frame: 0, counter: 0 }
+    pub fn new(animation: Vec<AnimationFrame>) -> Animator {
+        Animator {
+            animation,
+            frame_index: 0,
+            counter: 0,
+        }
     }
 
-    fn access_frame(&mut self) -> &str {
-        let out = &self.frames[self.current_frame];
+    /// Gets the text of the current frame and updates the frame counter, changing the current
+    /// frame if the duration is exceeded.
+    fn access_frame(&mut self) -> String {
+        let current_frame = &self.animation[self.frame_index];
 
         self.counter += 1;
-        if self.counter >= self.rate {
+        if self.counter >= current_frame.duration {
             self.counter = 0;
-            self.current_frame = (self.current_frame + 1) % self.frames.len();
+            self.frame_index = (self.frame_index + 1) % self.animation.len();
         }
-        if self.current_frame >= self.frames.len() {
-            self.current_frame = 0;
+        if self.frame_index >= self.animation.len() {
+            self.frame_index = 0;
         }
 
-        out
+        current_frame.text.clone()
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct AnimationFrame {
+    pub(crate) text: String,
+    duration: i32,
+}
+
+impl AnimationFrame {
+    pub fn new(text: &str, duration: i32) -> AnimationFrame {
+        let text = text.to_string();
+        AnimationFrame { text, duration }
+    }
+}
+
+impl Display for AnimationFrame {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.text)
     }
 }
