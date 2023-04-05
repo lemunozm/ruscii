@@ -374,6 +374,7 @@ pub struct Animator {
     animation: Vec<AnimationFrame>,
     frame_index: usize,
     counter: i32,
+    speed: u32,
 }
 
 impl Animator {
@@ -384,7 +385,13 @@ impl Animator {
             animation,
             frame_index: 0,
             counter: 0,
+            speed: 1,
         }
+    }
+
+    /// Sets the speed of animation.
+    pub fn set_speed(&mut self, speed: u32) {
+        self.speed = speed
     }
 
     /// Gets the text of the current frame and updates the frame counter, changing the current
@@ -393,7 +400,7 @@ impl Animator {
         let current_frame = &self.animation[self.frame_index];
 
         self.counter += 1;
-        if self.counter >= current_frame.duration {
+        if self.counter >= current_frame.duration / self.speed as i32 {
             self.counter = 0;
             self.frame_index = (self.frame_index + 1) % self.animation.len();
         }
