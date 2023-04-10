@@ -5,7 +5,6 @@
 
 use super::spatial::Vec2;
 use super::terminal::{Canvas, Color, Style};
-use std::fmt::{Display, Formatter};
 
 use num::cast::ToPrimitive;
 
@@ -373,7 +372,7 @@ impl<'a> Pencil<'a> {
 pub struct Animator {
     animation: Vec<AnimationFrame>,
     frame_index: usize,
-    counter: i32,
+    counter: u32,
     speed: u32,
 }
 
@@ -400,12 +399,9 @@ impl Animator {
         let current_frame = &self.animation[self.frame_index];
 
         self.counter += 1;
-        if self.counter >= current_frame.duration / self.speed as i32 {
+        if self.counter >= current_frame.duration / self.speed {
             self.counter = 0;
             self.frame_index = (self.frame_index + 1) % self.animation.len();
-        }
-        if self.frame_index >= self.animation.len() {
-            self.frame_index = 0;
         }
 
         current_frame.text.clone()
@@ -415,18 +411,14 @@ impl Animator {
 #[derive(Clone, Debug, PartialEq)]
 pub struct AnimationFrame {
     pub(crate) text: String,
-    duration: i32,
+    duration: u32,
 }
 
 impl AnimationFrame {
-    pub fn new(text: impl Into<String>, duration: i32) -> AnimationFrame {
-        let text = text.to_string();
-        AnimationFrame { text, duration }
-    }
-}
-
-impl Display for AnimationFrame {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.text)
+    pub fn new(text: impl Into<String>, duration: u32) -> AnimationFrame {
+        AnimationFrame {
+            text: text.into(),
+            duration,
+        }
     }
 }
