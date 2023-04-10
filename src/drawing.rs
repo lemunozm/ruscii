@@ -419,7 +419,7 @@ pub struct AnimationFrame {
 }
 
 impl AnimationFrame {
-    pub fn new(text: &str, duration: i32) -> AnimationFrame {
+    pub fn new(text: impl Into<String>, duration: i32) -> AnimationFrame {
         let text = text.to_string();
         AnimationFrame { text, duration }
     }
