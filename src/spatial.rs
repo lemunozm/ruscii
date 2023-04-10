@@ -9,7 +9,7 @@ use std::convert::TryFrom;
 use std::error::Error;
 use std::fmt;
 use std::fmt::{Display, Formatter};
-use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
+use std::ops::{Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign};
 
 /// Represents a two-dimensional spatial vector.
 ///
@@ -196,6 +196,27 @@ impl<T: ToPrimitive> MulAssign<T> for Vec2 {
 impl<T: ToPrimitive> DivAssign<T> for Vec2 {
     fn div_assign(&mut self, scalar: T) {
         *self = *self / scalar
+    }
+}
+
+impl<T> Index<Vec2> for Vec<Vec<T>> {
+    type Output = T;
+
+    /// Allows indexing by a [`Vec2`] for an arbitrary nested Vec.
+    ///
+    /// ```rust
+    /// # use ruscii::spatial::Vec2;
+    /// let vec = vec![vec![1, 2], vec![3, 4], vec![5, 6]];
+    /// let point = Vec2::xy(1, 1);
+    /// assert_eq!(vec[point], 4)
+    fn index(&self, index: Vec2) -> &Self::Output {
+        &self[index.x as usize][index.y as usize]
+    }
+}
+
+impl<T> IndexMut<Vec2> for Vec<Vec<T>> {
+    fn index_mut(&mut self, index: Vec2) -> &mut Self::Output {
+        &mut self[index.x as usize][index.y as usize]
     }
 }
 
