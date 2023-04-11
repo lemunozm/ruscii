@@ -90,7 +90,7 @@ cargo run --example <example_name> --release
 Add the following line to the `[dependencies]` section in your `Cargo.toml` file:
 
 ```toml
-ruscii = "0.3.2"
+ruscii = "0.4.0"
 ```
 
 ### Test it in your own terminal!
