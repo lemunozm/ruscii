@@ -1,5 +1,10 @@
-## Current 0.4.0
-- Remove most of the `new()` methods in order to use `default()`.
+## Current 0.4.0 ([#12](https://github.com/lemunozm/ruscii/issues/12))
+- Removed most of the `new()` methods in order to use `default()`.
+- Added basic animations
+- Added `from()` methods for `Vec2` and `Direction`
+- Added `draw_right_aligned_text()` method.
+- Added `Vec<Vec<>>` indexing operators by `Vec2 `
+- Dependencies updated.
 
 ## Current 0.3.2
 - Improvement key support.
