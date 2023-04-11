@@ -368,7 +368,29 @@ impl<'a> Pencil<'a> {
     }
 }
 
-/// An object that runs an [`Animation`].
+/// An object that runs an animation.
+///
+/// ## Example
+///
+/// An [`Animator`] must be supplied with a [`Vec`] of [`AnimationFrame`]s and then drawn by a
+/// [`Pencil`] like so:
+///
+/// ```rust
+/// # use ruscii::drawing::{AnimationFrame, Animator, Pencil};
+/// # use ruscii::spatial::Vec2;
+/// # use ruscii::terminal::{Canvas, VisualElement};
+/// # let mut canvas = Canvas::new(Vec2::xy(3, 1), &VisualElement::default());
+/// # let mut pencil = Pencil::new(&mut canvas);
+/// let animation = vec![
+///     AnimationFrame::new("X  ", 1),
+///     AnimationFrame::new(" X ", 1),
+///     AnimationFrame::new("  X", 1),
+///     AnimationFrame::new(" X ", 1),
+/// ];
+/// let mut animator = Animator::new(animation);
+///
+/// pencil.draw_animator(&mut animator, Vec2::zero());
+/// ```
 pub struct Animator {
     animation: Vec<AnimationFrame>,
     frame_index: usize,
@@ -377,8 +399,7 @@ pub struct Animator {
 }
 
 impl Animator {
-    /// Creates a new [`Animator`] with the given `frames` and with `rate` number of frames
-    /// displayed per animation frame.
+    /// Creates a new [`Animator`] with the given `animation`.
     pub fn new(animation: Vec<AnimationFrame>) -> Animator {
         Animator {
             animation,
@@ -408,6 +429,7 @@ impl Animator {
     }
 }
 
+/// A single frame of an animation.
 #[derive(Clone, Debug, PartialEq)]
 pub struct AnimationFrame {
     pub(crate) text: String,
@@ -415,6 +437,7 @@ pub struct AnimationFrame {
 }
 
 impl AnimationFrame {
+    /// Creates an [`AnimationFrame`] from the given `text` that lasts for the given `duration`.
     pub fn new(text: impl Into<String>, duration: u32) -> AnimationFrame {
         AnimationFrame {
             text: text.into(),
