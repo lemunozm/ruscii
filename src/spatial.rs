@@ -211,6 +211,7 @@ impl<T> Index<Vec2> for Vec<Vec<T>> {
     /// let vec = vec![vec![1, 2], vec![3, 4], vec![5, 6]];
     /// let point = Vec2::xy(1, 1);
     /// assert_eq!(vec[point], 4)
+    /// ```
     fn index(&self, index: Vec2) -> &Self::Output {
         &self[index.x as usize][index.y as usize]
     }
