@@ -227,8 +227,7 @@ impl From<Direction> for Vec2 {
     /// Converts a [`Direction`] to a unit-length [`Vec2`] in that direction.
     ///
     /// Because terminal coordinates begin at the top line, vertical directions are inverted
-    /// compared to what you may expect. More information in the example. For [`Direction::None`], a
-    /// zero [`Vec2`] is returned.
+    /// compared to what you may expect. More information in the example.
     ///
     /// ## Example
     ///
@@ -250,7 +249,6 @@ impl From<Direction> for Vec2 {
             Direction::Down => Vec2::y(1),
             Direction::Right => Vec2::x(1),
             Direction::Left => Vec2::x(-1),
-            Direction::None => Vec2::zero(),
         }
     }
 }
@@ -263,20 +261,16 @@ pub enum Direction {
     Down,
     Right,
     Left,
-    None,
 }
 
 impl Direction {
     /// Returns the opposite [`Direction`].
-    ///
-    /// For [`Direction::None`], [`Direction::None`] is returned.
     pub fn opposite(&self) -> Direction {
         match *self {
             Direction::Up => Direction::Down,
             Direction::Down => Direction::Up,
             Direction::Right => Direction::Left,
             Direction::Left => Direction::Right,
-            Direction::None => Direction::None,
         }
     }
 }
@@ -325,7 +319,6 @@ impl TryFrom<Vec2> for Direction {
             (Ordering::Greater, Ordering::Equal) => Ok(Direction::Right),
             (Ordering::Equal, Ordering::Greater) => Ok(Direction::Down),
             (Ordering::Equal, Ordering::Less) => Ok(Direction::Up),
-            (Ordering::Equal, Ordering::Equal) => Ok(Direction::None),
             _ => Err(TryFromVec2Error { value }),
         }
     }
@@ -336,7 +329,7 @@ pub struct TryFromVec2Error {
     value: Vec2,
 }
 
-impl fmt::Display for TryFromVec2Error {
+impl Display for TryFromVec2Error {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(
             f,
