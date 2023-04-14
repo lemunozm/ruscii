@@ -331,11 +331,7 @@ pub struct TryFromVec2Error {
 
 impl Display for TryFromVec2Error {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "displacement vector ({}, {}) is not orthogonal",
-            self.value.x, self.value.y
-        )
+        write!(f, "displacement vector {} is not orthogonal", self.value)
     }
 }
 
