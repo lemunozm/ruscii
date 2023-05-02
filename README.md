@@ -106,8 +106,8 @@ use ruscii::spatial::{Vec2};
 use ruscii::gui::{FPSCounter};
 
 fn main() {
-    let mut fps_counter = FPSCounter::new();
-    let mut app = App::new();
+    let mut fps_counter = FPSCounter::default();
+    let mut app = App::default();
 
     app.run(|app_state: &mut State, window: &mut Window| {
         for key_event in app_state.keyboard().last_key_events() {
