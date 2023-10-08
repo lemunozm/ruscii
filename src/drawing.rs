@@ -364,7 +364,8 @@ impl<'a> Pencil<'a> {
     /// Draws one of the frames of the given `animator` based on the number of times this has
     /// been previously called.
     pub fn draw_animator(&mut self, animator: &mut Animator, position: Vec2) {
-        self.draw_text(&animator.access_frame(), position);
+        let frame = &animator.access_frame();
+        self.draw_text(&frame.text, position + frame.delta);
     }
 }
 
@@ -382,10 +383,10 @@ impl<'a> Pencil<'a> {
 /// # let mut canvas = Canvas::new(Vec2::xy(3, 1), &VisualElement::default());
 /// # let mut pencil = Pencil::new(&mut canvas);
 /// let animation = vec![
-///     AnimationFrame::new("X  ", 1),
-///     AnimationFrame::new(" X ", 1),
-///     AnimationFrame::new("  X", 1),
-///     AnimationFrame::new(" X ", 1),
+///     AnimationFrame::new("X", Vec2::zero(), 1),
+///     AnimationFrame::new("X", Vec2::x(1), 1),
+///     AnimationFrame::new("X", Vec2::x(2), 1),
+///     AnimationFrame::new("X", Vec2::x(1), 1),
 /// ];
 /// let mut animator = Animator::new(animation);
 ///
@@ -416,7 +417,7 @@ impl Animator {
 
     /// Gets the text of the current frame and updates the frame counter, changing the current
     /// frame if the duration is exceeded.
-    fn access_frame(&mut self) -> String {
+    fn access_frame(&mut self) -> AnimationFrame {
         let current_frame = &self.animation[self.frame_index];
 
         self.counter += 1;
@@ -425,22 +426,25 @@ impl Animator {
             self.frame_index = (self.frame_index + 1) % self.animation.len();
         }
 
-        current_frame.text.clone()
+        current_frame.to_owned()
     }
 }
 
 /// A single frame of an animation.
 #[derive(Clone, Debug, PartialEq)]
 pub struct AnimationFrame {
-    pub(crate) text: String,
+    text: String,
+    delta: Vec2,
     duration: u32,
 }
 
 impl AnimationFrame {
-    /// Creates an [`AnimationFrame`] from the given `text` that lasts for the given `duration`.
-    pub fn new(text: impl Into<String>, duration: u32) -> AnimationFrame {
+    /// Creates an [`AnimationFrame`] from the given `text` that lasts for the given `duration` and
+    /// is displaced by the given `delta`.
+    pub fn new(text: impl Into<String>, delta: Vec2, duration: u32) -> AnimationFrame {
         AnimationFrame {
             text: text.into(),
+            delta,
             duration,
         }
     }
