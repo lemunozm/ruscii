@@ -167,8 +167,8 @@ fn main() {
 
         for key_down in app_state.keyboard().get_keys_down() {
             match key_down {
-                Key::A | Key::H => state.spaceship_move_x(-1),
-                Key::D | Key::L => state.spaceship_move_x(1),
+                Key::A | Key::H | Key::Numpad4 => state.spaceship_move_x(-1),
+                Key::D | Key::L | Key::Numpad6 => state.spaceship_move_x(1),
                 Key::Space => state.spaceship_shot(app_state.step()),
                 _ => (),
             }
