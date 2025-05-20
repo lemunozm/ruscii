@@ -159,7 +159,7 @@ pub struct Pencil<'a> {
 
 impl<'a> Pencil<'a> {
     /// Constructs a [`Pencil`] that can write to the given [`Canvas`].
-    pub fn new(canvas: &'a mut Canvas) -> Pencil {
+    pub fn new(canvas: &'a mut Canvas) -> Pencil<'a> {
         Pencil {
             origin: Vec2::zero(),
             foreground: canvas.default_element().foreground,
@@ -365,7 +365,9 @@ impl<'a> Pencil<'a> {
     /// been previously called.
     pub fn draw_animator(&mut self, animator: &mut Animator, position: Vec2) {
         let frame = &animator.access_frame();
-        self.draw_text(&frame.text, position + frame.delta);
+        for (i, line) in frame.text.lines().enumerate() {
+            self.draw_text(line, position + frame.delta + Vec2::y(i));
+        }
     }
 }
 
@@ -439,8 +441,9 @@ pub struct AnimationFrame {
 }
 
 impl AnimationFrame {
-    /// Creates an [`AnimationFrame`] from the given `text` that lasts for the given `duration` and
-    /// is displaced by the given `delta`.
+    /// Creates an [`AnimationFrame`] from the given `text` that lasts for the
+    /// given `duration` and is displaced by the given `delta`. Multi-lined text
+    /// is drawn relative to the frame's top-left character.
     pub fn new(text: impl Into<String>, delta: Vec2, duration: u32) -> AnimationFrame {
         AnimationFrame {
             text: text.into(),
