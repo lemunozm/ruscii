@@ -356,7 +356,7 @@ impl<'a> Pencil<'a> {
     ) -> &mut Pencil<'a> {
         self.move_origin(position);
         for i in 0..dimension.x {
-            self.draw_vline(fill, Vec2::xy(position.x + i, position.y), dimension.y);
+            self.draw_vline(fill, Vec2::xy(i, 0), dimension.y);
         }
         self.move_origin(-position)
     }
